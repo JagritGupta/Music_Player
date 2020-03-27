@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/song_card"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <RelativeLayout
+                android:id="@+id/item_song_layout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_toLeftOf="@id/favUnfilled"
+                android:padding="10dp">
+
+                <ImageView
+                    android:id="@+id/songImage"
+                    android:layout_width="52dp"
+                    android:layout_height="56dp"
+                    android:src="@drawable/music_player"
+                    />
+
+                <TextView
+                    android:id="@+id/songTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="6dp"
+                    android:ellipsize="end"
+                    android:gravity="center_vertical"
+                    android:marqueeRepeatLimit="marquee_forever"
+                    android:maxLines="1"
+                    android:padding="5dp"
+                    android:text="Malang Title Track Single"
+                    android:textColor="@color/colorPrimaryDark"
+                    android:layout_toRightOf="@id/songImage"
+                    android:textSize="18dp"
+                    android:textStyle="bold"/>
+
+                <TextView
+                    android:id="@+id/songDesc"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="end"
+                    android:marqueeRepeatLimit="marquee_forever"
+                    android:maxLines="1"
+                    android:paddingLeft="15dp"
+                    android:text="Sample Display Song name"
+                    android:textColor="@color/colorPrimary"
+                    android:layout_toRightOf="@id/songImage"
+                    android:layout_below="@id/songTitle"
+                    android:textSize="13dp"
+                    android:textStyle="italic"/>
+
+                <ImageView
+                    android:id="@+id/favourites"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_toRightOf="@id/songTitle"
+                    />
+            </RelativeLayout>
+
+            <ImageView
+                android:id="@+id/favUnfilled"
+                android:layout_width="50dp"
+                android:layout_height="65dp"
+                android:layout_alignParentTop="true"
+                android:padding="16dp"
+                android:layout_alignParentRight="true"
+                android:layout_centerVertical="true"
+                app:srcCompat="@drawable/fav" />
+
+            <ImageView
+                android:id="@+id/favFilled"
+                android:layout_width="25dp"
+                android:layout_height="25dp"
+                android:layout_alignParentTop="true"
+                android:layout_alignParentRight="true"
+                android:visibility="gone"
+                app:srcCompat="@drawable/fav_filled" />
+        </RelativeLayout>
+
+
+
+
+    </androidx.cardview.widget.CardView>
+
+</RelativeLayout>
