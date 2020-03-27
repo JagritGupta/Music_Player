@@ -1,8 +1,11 @@
 package com.example.myplayer;
 
+import java.util.ArrayList;
+
 public class MusicLibrary {
     String songTitle,songDesc;
     int songImage;
+    //private static ArrayList<MusicLibrary> fav;
 
     public MusicLibrary(){}
 

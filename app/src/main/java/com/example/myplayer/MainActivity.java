@@ -68,9 +68,8 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-        musicLibraryAdapter = new MusicLibraryAdapter(this, albumList, new MusicLibraryAdapter.IMusicClickListener() {
-            @Override
-            public void onClickMusicFolder(int position) {
+        musicLibraryAdapter = new MusicLibraryAdapter(this, albumList,typeOfPlaylist);
+            /*public void onClickMusicFolder(int position) {
                 String songName=albumList.get(position).songTitle;
                 Toast.makeText(MainActivity.this,albumList.get(position).songTitle,Toast.LENGTH_LONG).show();
                 Intent i=new Intent(getApplicationContext(),PlayerActivity.class);
@@ -84,7 +83,6 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(i);
             }
 
-            @Override
             public void onClickFavourite(int imageID) {
                 Toast.makeText(MainActivity.this,"On ClickFavourite",Toast.LENGTH_LONG).show();
                 int id=R.id.favUnfilled;
@@ -96,7 +94,7 @@ public class MainActivity extends AppCompatActivity {
 
                 }
             }
-        });
+        });*/
 
         /*musicLibraryAdapter.setClickListener(new MusicLibraryAdapter.IMusicClickListener() {
             @Override
@@ -137,7 +135,8 @@ public class MainActivity extends AppCompatActivity {
                 Log.d("field",Integer.toString(fields.length));
                 for(int i=0;i<fields.length;i++){
                     Log.d("field",Integer.toString(i));
-                    MusicLibrary singleSong=new MusicLibrary(fields[i].getName(),artistName,R.id.songImage);
+                    String songName=fields[i].getName().replace("_"," ");
+                    MusicLibrary singleSong=new MusicLibrary(songName,artistName,R.id.songImage);
                     albumList.add(singleSong);
 
                 }

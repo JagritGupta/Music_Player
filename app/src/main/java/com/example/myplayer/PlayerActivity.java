@@ -89,7 +89,7 @@ public class PlayerActivity extends AppCompatActivity {
         Intent intent=getIntent();
         Bundle bundle=intent.getExtras();
         songDetails= (SongDetails) bundle.getParcelable("songsDetailsObject");
-        mySongs=(ArrayList) bundle.getParcelableArrayList("songsArrayList");
+        //mySongs=(ArrayList) bundle.getParcelableArrayList("songsArrayList");
         typeOfPlaylist=bundle.getString("typeOfPlaylist");
         sName=songDetails.songTitle;
         String songName=songDetails.songTitle;
@@ -186,7 +186,6 @@ public class PlayerActivity extends AppCompatActivity {
                 if(currentPosition>=totalDuration){
                     currentPosition=totalDuration;
                     seekBar.setProgress(currentPosition);
-
                 }
                 Toast.makeText(PlayerActivity.this,Integer.toString((currentPosition)),Toast.LENGTH_SHORT).show();
                 seekBar.setProgress(currentPosition);
@@ -229,9 +228,10 @@ public class PlayerActivity extends AppCompatActivity {
     }
 
     public void playMedia(String type,int position) {
-        switch (type){
+        switch (type)
+        {
             case "Downloads":
-                Uri uri=Uri.parse(mySongs.get(position).toString());
+                Uri uri=Uri.parse(songDetails.toString());
                 mediaPlayer=MediaPlayer.create(getApplicationContext(),uri);
                 mediaPlayer.start();
                 seekBar.setMax(mediaPlayer.getDuration());
