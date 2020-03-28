@@ -19,14 +19,16 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class MusicLibraryAdapter extends RecyclerView.Adapter<MusicLibraryAdapter.MusicViewHolder> implements Filterable {
 
     Context context;
-    List<MusicLibrary> songsList;
-    List<MusicLibrary> searchList;
+    List<SongDetails> songsList;
+    List<SongDetails> searchList;
     String typeOfPlaylist;
     private IMusicClickListener clickListener;
+    private final int[] festivalSongsList = {R.raw.aa_aaye_navratre_ambe_maa, R.raw.jai_jaikaar_sukhwinder_singh, R.raw.lali_lali_laal_chunariya, R.raw.navraton_mein_ghar_mere_aayi};
 
 
     public interface IMusicClickListener {
@@ -35,21 +37,28 @@ public class MusicLibraryAdapter extends RecyclerView.Adapter<MusicLibraryAdapte
         void onClickFavourite(int imageID);
     }
 
-    public MusicLibraryAdapter(Context context, List<MusicLibrary> songsList,String typeOfPlaylist) {
+    public MusicLibraryAdapter(Context context, List<SongDetails> songsList, String typeOfPlaylist) {
         this.context = context;
         this.songsList = songsList;
         this.clickListener = clickListener;
-        this.typeOfPlaylist=typeOfPlaylist;
+        this.typeOfPlaylist = typeOfPlaylist;
         this.searchList = new ArrayList<>(songsList);   //so that searchList and albumList remain different.
     }
 
-    public void updateList(List<MusicLibrary> albumList) {
-        this.songsList = albumList;
+    public MusicLibraryAdapter(Context context, String typeOfPlaylist) {
+        this.context = context;
+        this.clickListener = clickListener;
+        this.typeOfPlaylist = typeOfPlaylist;
+        this.searchList = new ArrayList<>(songsList);   //so that searchList and albumList remain different.
     }
 
-    public void setClickListener(IMusicClickListener clickListener, List<MusicLibrary> albumList) {
+    public void updateList(List<SongDetails> songsList) {
+        this.songsList = songsList;
+    }
+
+    public void setClickListener(IMusicClickListener clickListener, List<SongDetails> songsList) {
         this.clickListener = clickListener;
-        updateList(albumList);
+        updateList(songsList);
     }
 
     @Override
@@ -66,26 +75,28 @@ public class MusicLibraryAdapter extends RecyclerView.Adapter<MusicLibraryAdapte
     @Override
     public void onBindViewHolder(@NonNull final MusicViewHolder holder, final int position) {
 
-        MusicLibrary musicLibrary = songsList.get(position);
-        holder.songTitle.setText(musicLibrary.getSongTitle());
-        holder.songDesc.setText(musicLibrary.getSongDesc());
+        SongDetails songDetails = songsList.get(position);
+        holder.songTitle.setText(songDetails.getSongTitle());
+        holder.songDesc.setText(songDetails.getSongDesc());
 
         holder.songLayout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String songName= songsList.get(position).songTitle;
-                Toast.makeText(context, songsList.get(position).songTitle,Toast.LENGTH_LONG).show();
-                Intent i=new Intent(context,PlayerActivity.class);
+                String songName = songsList.get(position).songTitle;
+                Toast.makeText(context, songsList.get(position).songTitle, Toast.LENGTH_LONG).show();
+                Intent i = new Intent(context, PlayerActivity.class);
 
-                SongDetails songDetails=SongDetails.getInstance();
-                songDetails.songTitle=songName;
-                songDetails.position=position;
-                songDetails.songDesc="Artist name";
-                songDetails.imageId=R.id.songImage;
-                songDetails.songID= 0;
+                SongDetails songDetails = SongDetails.getInstance();
+                songDetails.songTitle = songName;
+                songDetails.position = position;
+                songDetails.songDesc = "Artist name";
+                songDetails.songImageID = R.id.songImage;
+                songDetails.songID = 0;
 
-                i.putExtra("songsDetailsObject",songDetails);
-                i.putExtra("typeOfPlaylist",typeOfPlaylist);
+                if (typeOfPlaylist.equals("Festival")) {
+                    songDetails.songID = festivalSongsList[position];
+                }
+                i.putExtra("typeOfPlaylist", typeOfPlaylist);
                 context.startActivity(i);
             }
         });
@@ -93,12 +104,12 @@ public class MusicLibraryAdapter extends RecyclerView.Adapter<MusicLibraryAdapte
         holder.unFavBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(holder.unFavBtn.getTag()==null){
-                    Toast.makeText(context,"Song added to Favourites",Toast.LENGTH_LONG).show();
+                if (holder.unFavBtn.getTag() == null) {
+                    Toast.makeText(context, "Song added to Favourites", Toast.LENGTH_LONG).show();
                     holder.unFavBtn.setTag(1);
                     holder.unFavBtn.setImageResource(R.drawable.fav_filled);
-                }else{
-                    Toast.makeText(context,"Song removed from Favourites",Toast.LENGTH_LONG).show();
+                } else {
+                    Toast.makeText(context, "Song removed from Favourites", Toast.LENGTH_LONG).show();
                     holder.unFavBtn.setTag(null);
                     holder.unFavBtn.setImageResource(R.drawable.fav);
                 }
@@ -112,30 +123,30 @@ public class MusicLibraryAdapter extends RecyclerView.Adapter<MusicLibraryAdapte
         return songsList.size();
     }
 
+
+
     @Override
     public Filter getFilter() {
         return mFilter;
     }
 
-    private Filter mFilter=new Filter() {
+    private Filter mFilter = new Filter() {
         @Override
         protected FilterResults performFiltering(CharSequence constraint) {
-            List<MusicLibrary> filteredList=new ArrayList<>();
+            ArrayList<SongDetails> filteredList = new ArrayList<>();
 
-            if(constraint==null || constraint.length()==0){
+            if (constraint == null || constraint.length() == 0) {
                 filteredList.addAll(searchList);
-            }
-            else{
-                String filterpattern=constraint.toString().toLowerCase().trim();
-                for(MusicLibrary item:searchList){
-                    if(item.getSongTitle().toLowerCase().contains(filterpattern)){
+            } else {
+                String filterpattern = constraint.toString().toLowerCase().trim();
+                for (SongDetails item : searchList) {
+                    if (item.getSongTitle().toLowerCase().contains(filterpattern)) {
                         filteredList.add(item);
                     }
                 }
             }
-            FilterResults results=new FilterResults();
-            results.values=filteredList;
-
+            FilterResults results = new FilterResults();
+            results.values = filteredList;
             return results;
         }
 
@@ -163,21 +174,6 @@ public class MusicLibraryAdapter extends RecyclerView.Adapter<MusicLibraryAdapte
             unFavBtn = itemView.findViewById(R.id.favUnfilled);
             songLayout = itemView.findViewById(R.id.item_song_layout);
 
-            /*songLayout.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    clickListener.onClickMusicFolder(getAdapterPosition());
-                }
-            });
-
-            unFavBtn.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    int imageID = unFavBtn.getId();
-                    clickListener.onClickFavourite(imageID);
-
-                }
-            });*/
         }
     }
 }

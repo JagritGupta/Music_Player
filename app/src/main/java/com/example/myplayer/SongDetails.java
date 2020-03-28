@@ -3,20 +3,36 @@ package com.example.myplayer;//Singleton Class
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import java.util.ArrayList;
+
 public class SongDetails implements Parcelable {
     String songTitle,songDesc;
-    int imageId,position;
-    int songID;
+    int songImageID,position;
+    private static ArrayList<SongDetails> songsList;
+    public static int songID;
     int currentPosition,totalDuration;
 
-    private static SongDetails songDetails;
+    public static ArrayList<SongDetails> getSongsList() {
+        return songsList;
+    }
+
+
+    public SongDetails(ArrayList<SongDetails> songsList){
+        this.songsList=songsList;
+    }
+
+    public SongDetails(String songTitle, String songDesc, int songImageID) {
+        this.songTitle = songTitle;
+        this.songDesc = songDesc;
+        this.songImageID = songImageID;
+    }
 
     private SongDetails(){    }
 
     protected SongDetails(Parcel in) {
         songTitle = in.readString();
         songDesc = in.readString();
-        imageId = in.readInt();
+        songImageID = in.readInt();
         position = in.readInt();
         songID = in.readInt();
         currentPosition = in.readInt();
@@ -27,7 +43,7 @@ public class SongDetails implements Parcelable {
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeString(songTitle);
         dest.writeString(songDesc);
-        dest.writeInt(imageId);
+        dest.writeInt(songImageID);
         dest.writeInt(position);
         dest.writeInt(songID);
         dest.writeInt(currentPosition);
@@ -57,6 +73,36 @@ public class SongDetails implements Parcelable {
     public int describeContents() {
         return 0;
     }
+
+    public String getSongTitle() {
+        return songTitle;
+    }
+
+    public String getSongDesc() {
+        return songDesc;
+    }
+
+    public int getSongImageID() {
+        return songImageID;
+    }
+
+    public int getPosition() {
+        return position;
+    }
+
+    public int getSongID() {
+        return songID;
+    }
+
+    public int getCurrentPosition() {
+        return currentPosition;
+    }
+
+    public int getTotalDuration() {
+        return totalDuration;
+    }
+
+    private static SongDetails songDetails;
 
 
 }
