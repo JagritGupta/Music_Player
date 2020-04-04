@@ -39,6 +39,7 @@
         android:orientation="vertical">
 
         <ImageView
+            android:id="@+id/playSong_image"
             android:layout_width="250dp"
             android:layout_height="250dp"
             android:src="@drawable/music_player" />

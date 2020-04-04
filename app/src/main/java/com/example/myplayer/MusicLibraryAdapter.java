@@ -1,8 +1,14 @@
 package com.example.myplayer;
 
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Parcelable;
+import android.provider.MediaStore;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,6 +16,7 @@ import android.widget.Filter;
 import android.widget.Filterable;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
+import android.widget.SearchView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -21,45 +28,36 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-public class MusicLibraryAdapter extends RecyclerView.Adapter<MusicLibraryAdapter.MusicViewHolder> implements Filterable {
+public class MusicLibraryAdapter extends RecyclerView.Adapter<MusicLibraryAdapter.MusicViewHolder>  {
 
     Context context;
-    List<SongDetails> songsList;
-    List<SongDetails> searchList;
-    String typeOfPlaylist;
-    private IMusicClickListener clickListener;
+    ArrayList<SongDetails> songsList;
+    ArrayList<SongDetails> searchList;
+    String typeOfPlaylist="";
     private final int[] festivalSongsList = {R.raw.aa_aaye_navratre_ambe_maa, R.raw.jai_jaikaar_sukhwinder_singh, R.raw.lali_lali_laal_chunariya, R.raw.navraton_mein_ghar_mere_aayi};
 
 
-    public interface IMusicClickListener {
-        void onClickMusicFolder(int position);
 
-        void onClickFavourite(int imageID);
-    }
-
-    public MusicLibraryAdapter(Context context, List<SongDetails> songsList, String typeOfPlaylist) {
+    public MusicLibraryAdapter(Context context, ArrayList<SongDetails> songsList,String typeOfPlaylist) {
         this.context = context;
         this.songsList = songsList;
-        this.clickListener = clickListener;
         this.typeOfPlaylist = typeOfPlaylist;
         this.searchList = new ArrayList<>(songsList);   //so that searchList and albumList remain different.
     }
 
     public MusicLibraryAdapter(Context context, String typeOfPlaylist) {
         this.context = context;
-        this.clickListener = clickListener;
         this.typeOfPlaylist = typeOfPlaylist;
         this.searchList = new ArrayList<>(songsList);   //so that searchList and albumList remain different.
     }
 
-    public void updateList(List<SongDetails> songsList) {
-        this.songsList = songsList;
+    public void updateList(List<SongDetails> songsArrList) {
+
+        songsList.clear();
+        songsList.addAll(songsArrList);
+        notifyDataSetChanged();
     }
 
-    public void setClickListener(IMusicClickListener clickListener, List<SongDetails> songsList) {
-        this.clickListener = clickListener;
-        updateList(songsList);
-    }
 
     @Override
     public MusicViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -78,25 +76,30 @@ public class MusicLibraryAdapter extends RecyclerView.Adapter<MusicLibraryAdapte
         SongDetails songDetails = songsList.get(position);
         holder.songTitle.setText(songDetails.getSongTitle());
         holder.songDesc.setText(songDetails.getSongDesc());
+        Bitmap bm= BitmapFactory.decodeFile(songDetails.songAlbumArt);
+        holder.songImage.setImageBitmap(bm);
+
+
 
         holder.songLayout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
+                SongDetails songDetails =songsList.get(position);
                 String songName = songsList.get(position).songTitle;
-                Toast.makeText(context, songsList.get(position).songTitle, Toast.LENGTH_LONG).show();
-                Intent i = new Intent(context, PlayerActivity.class);
+                Toast.makeText(context, songName , Toast.LENGTH_LONG).show();
 
-                SongDetails songDetails = SongDetails.getInstance();
-                songDetails.songTitle = songName;
-                songDetails.position = position;
-                songDetails.songDesc = "Artist name";
-                songDetails.songImageID = R.id.songImage;
-                songDetails.songID = 0;
+                if (songDetails.position>=0) {  //Festival type
+                    songDetails.setSongID(festivalSongsList[songDetails.position]);
 
-                if (typeOfPlaylist.equals("Festival")) {
-                    songDetails.songID = festivalSongsList[position];
                 }
-                i.putExtra("typeOfPlaylist", typeOfPlaylist);
+                else{
+                    songDetails.path=songDetails.getPath();
+                }
+
+                Intent i = new Intent(context, PlayerActivity.class);
+                i.putExtra("songObject",songDetails);
+                i.putExtra("position",position);
                 context.startActivity(i);
             }
         });
@@ -124,41 +127,6 @@ public class MusicLibraryAdapter extends RecyclerView.Adapter<MusicLibraryAdapte
     }
 
 
-
-    @Override
-    public Filter getFilter() {
-        return mFilter;
-    }
-
-    private Filter mFilter = new Filter() {
-        @Override
-        protected FilterResults performFiltering(CharSequence constraint) {
-            ArrayList<SongDetails> filteredList = new ArrayList<>();
-
-            if (constraint == null || constraint.length() == 0) {
-                filteredList.addAll(searchList);
-            } else {
-                String filterpattern = constraint.toString().toLowerCase().trim();
-                for (SongDetails item : searchList) {
-                    if (item.getSongTitle().toLowerCase().contains(filterpattern)) {
-                        filteredList.add(item);
-                    }
-                }
-            }
-            FilterResults results = new FilterResults();
-            results.values = filteredList;
-            return results;
-        }
-
-        @Override
-        protected void publishResults(CharSequence constraint, FilterResults results) {
-            //To publish result over ui
-            searchList.clear();
-            searchList.addAll((List) results.values);
-            notifyDataSetChanged();
-        }
-    };
-
     class MusicViewHolder extends RecyclerView.ViewHolder {
 
         ImageView songImage, favBtn, unFavBtn;
@@ -166,6 +134,7 @@ public class MusicLibraryAdapter extends RecyclerView.Adapter<MusicLibraryAdapte
         RelativeLayout songLayout;
 
         public MusicViewHolder(@NonNull final View itemView) {
+
             super(itemView);
             songImage = itemView.findViewById(R.id.songImage);
             songTitle = itemView.findViewById(R.id.songTitle);

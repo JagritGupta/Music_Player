@@ -11,7 +11,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".menu"></activity>
+        <activity android:name=".MediaPlayer_mini"></activity>
+        <activity android:name=".menu" />
         <activity android:name=".splashScreenActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -21,6 +22,10 @@
         </activity>
         <activity android:name=".PlayerActivity" />
         <activity android:name=".MainActivity" />
+
+        <receiver android:name=".Services.NotificationActionService" />
+
+        <service android:name=".Services.OnClearFromRecentServiceSearch" />
     </application>
 
 </manifest>
