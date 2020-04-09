@@ -1,6 +1,9 @@
 package com.example.myplayer;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.Observer;
+import androidx.lifecycle.ViewModel;
+import androidx.lifecycle.ViewModelProviders;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -8,7 +11,9 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.icu.util.UniversalTimeScale;
+import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -30,6 +35,8 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
+import static java.util.Collections.sort;
+
 public class MainActivity extends AppCompatActivity implements SearchView.OnQueryTextListener {
     RecyclerView recyclerView;
     TextView noSongsFound;
@@ -40,10 +47,10 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
     public static RelativeLayout miniPlayerLayout, miniSongInfoLayout;
     public static TextView miniSongTitle, miniSongDesc;
     public static ImageView miniPlayPauseBtn, miniSongImg;
+    RoomViewModel viewModel;
 
     private final int[] festivalSongsList = {R.raw.aa_aaye_navratre_ambe_maa, R.raw.jai_jaikaar_sukhwinder_singh, R.raw.lali_lali_laal_chunariya, R.raw.navraton_mein_ghar_mere_aayi};
 
-    public static ArrayList<File> mySongs;
     SongDetails songDetails;
     String menuType, typeOfPlaylist;
 
@@ -68,11 +75,8 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
         miniSongDesc = findViewById(R.id.song_description);
         miniSongTitle = findViewById(R.id.song_name);
         miniSongImg = findViewById(R.id.song_imageView);
-
-
-        musicLibraryAdapter = new MusicLibraryAdapter(this, songsList, typeOfPlaylist);
         Utility.setSongsList(songsList);
-        SongDetails songDetails = new SongDetails(songsList);
+        musicLibraryAdapter = new MusicLibraryAdapter(this, songsList, typeOfPlaylist);
         recyclerView.setAdapter(musicLibraryAdapter);
 
         miniSongInfoLayout.setOnClickListener(new View.OnClickListener() {
@@ -89,8 +93,13 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
             miniPlayerLayout.setVisibility(View.VISIBLE);
             miniSongTitle.setText(songDetails.songTitle);
             miniSongDesc.setText(songDetails.songDesc);
-            Bitmap bm = BitmapFactory.decodeFile(songDetails.songAlbumArt);
-            miniSongImg.setImageBitmap(bm);
+
+            if (songDetails.playlistType == "Festival") {
+                miniSongImg.setImageResource(R.drawable.music_player);
+            } else {
+                Bitmap bm = BitmapFactory.decodeByteArray(songDetails.songAlbumArt, 0, songDetails.songAlbumArt.length);
+                miniSongImg.setImageBitmap(bm);
+            }
         }
     }
 
@@ -100,110 +109,111 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
             case "Festival Songs":
                 Toast.makeText(MainActivity.this, "FESTIVAL SONGS", Toast.LENGTH_SHORT).show();
                 fetchFestivalSongs();
-                return songsList;
-
-            case "Favourites":
-                Toast.makeText(MainActivity.this, "This Option is currently unavailable!", Toast.LENGTH_SHORT).show();
-                return songsList;
-
-            case "Downloads":
-                Toast.makeText(MainActivity.this, "Downloads", Toast.LENGTH_SHORT).show();
-
-                fetchDownloadSongs();
-
-                /*mySongs = findSong(Environment.getExternalStorageDirectory());
-                typeOfPlaylist = "Downloads";
-
-                for (int i = 0; i < mySongs.size(); i++) {
-                    SongDetails singleSong = new SongDetails(mySongs.get(i).getName(), artistName, R.id.songImage);
-                    singleSong.setPath(mySongs.get(i).toString());
-                    singleSong.position=-1;
-                    singleSong.playlistType=typeOfPlaylist;
-                    songsList.add(singleSong);
-                }
-*/
-                if (mySongs.size() == 0) {
-                    recyclerView.setVisibility(View.GONE);
-                    noSongsFound.setVisibility(View.VISIBLE);
-                }
-                Utility.setDownloadsList(mySongs);
-                return songsList;
-
-            case "AllSongs":
-                Toast.makeText(MainActivity.this, "ALL SONGS", Toast.LENGTH_SHORT).show();
-
-                fetchDownloadSongs();
-
-                fetchFestivalSongs();
-
-                typeOfPlaylist = "All Songs";
 
                 if (songsList.size() == 0) {
                     recyclerView.setVisibility(View.GONE);
                     noSongsFound.setVisibility(View.VISIBLE);
                 }
                 return songsList;
+
+            case "Favourites":
+                Toast.makeText(MainActivity.this, "Your favourites", Toast.LENGTH_SHORT).show();
+                viewModel= ViewModelProviders.of(MainActivity.this).get(RoomViewModel.class);
+                viewModel.fetchAllFavSongs().observe(MainActivity.this, new Observer<List<SongEntity>>() {
+                    @Override
+                    public void onChanged(List<SongEntity> songEntities) {
+                        if(songEntities.size()==0){
+                            noSongsFound.setVisibility(View.VISIBLE);
+                        }
+                        else{
+                            for(int i=0;i<songEntities.size();i++){
+                                SongDetails singleSong=new SongDetails();
+                                singleSong.setSongTitle(songEntities.get(i).songTitle);
+                                singleSong.setSongDesc(songEntities.get(i).songDesc);
+                                singleSong.setPlaylistType("Downloads");
+                                songsList.add(singleSong);
+                            }
+                        }
+                    }
+                });
+                return songsList;
+
+            case "Downloads":
+                Toast.makeText(MainActivity.this, "Downloads", Toast.LENGTH_SHORT).show();
+                fetchDownloadSongs((Environment.getExternalStorageDirectory()));
+
+                if (songsList.size() == 0) {
+                    recyclerView.setVisibility(View.GONE);
+                    noSongsFound.setVisibility(View.VISIBLE);
+                }
+                return songsList;
+
+            case "AllSongs":
+                Toast.makeText(MainActivity.this, "ALL SONGS", Toast.LENGTH_SHORT).show();
+
+                fetchDownloadSongs((Environment.getExternalStorageDirectory()));
+
+                fetchFestivalSongs();
+
+                typeOfPlaylist = "All Songs";
+                if (songsList.size() == 0) {
+                    recyclerView.setVisibility(View.GONE);
+                    noSongsFound.setVisibility(View.VISIBLE);
+                }
+                return songsList;
+
+
         }
-
-
         return null;
-
     }
 
-    public ArrayList<File> findSong(File file) {
-        ArrayList<File> mySongs = new ArrayList<>();
+    public void fetchDownloadSongs(File file) {
         File[] files = file.listFiles();
-
 
         if (files != null) {
             for (File singleFile : files) {
                 if (singleFile.isDirectory() && !singleFile.isHidden()) {
-                    mySongs.addAll(findSong(singleFile));
-                } else {
+                    fetchDownloadSongs(singleFile);
+                }
+                else {
                     if (singleFile.getName().endsWith(".mp3") || singleFile.getName().endsWith(".wav") || singleFile.getName().endsWith(".m4a")) {
-                        mySongs.add(singleFile); //Adding the mp3 and wav songs in the songsList
 
+                        String path = singleFile.getPath();
+                        MediaMetadataRetriever metaRetriver = new MediaMetadataRetriever();
+                        metaRetriver.setDataSource(path);
+
+                        try {
+                            String albumName = metaRetriver.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM);
+                            String artistName = metaRetriver.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST);
+                            byte[] albumArt = metaRetriver.getEmbeddedPicture();
+                            SongDetails singleSong = new SongDetails(albumName, artistName, albumArt);
+                            singleSong.setPath(path);
+                            singleSong.setPlaylistType("Downloads");
+                            songsList.add(singleSong);
+                        } catch (Exception e) {
+
+                        }
                     }
                 }
             }
         }
-
-
-        return mySongs;
     }
 
-    public void fetchDownloadSongs() {
-        final Uri uri = MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI;
 
-        final Cursor cursor = getContentResolver().query(uri, null, null, null, null);
-        int filePos = 0;
-        mySongs = findSong(Environment.getExternalStorageDirectory());
-        while (cursor.moveToNext()) {
-            //final String albumName = mySongs.get(filePos).getName();
-            final String albumName = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM));
-            final String path = "";//cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Audio.Media._ID));
-            final String artist = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Audio.Albums.ARTIST));
-            final String albumart = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Audio.Albums.ALBUM_ART));
-            SongDetails singleSong = new SongDetails(albumName, artist, R.id.songImage, albumart);
-            singleSong.path=path;
-            songsList.add(singleSong);
-            filePos += 1;
-        }
-    }
-
-    public void fetchFestivalSongs(){
+    public void fetchFestivalSongs() {
         typeOfPlaylist = "Festival";
         Field[] fields = R.raw.class.getFields();
-        Log.d("field", Integer.toString(fields.length));
+
         for (int i = 0; i < fields.length; i++) {
-            Log.d("field", Integer.toString(i));
             String songName = fields[i].getName().replace("_", " ");
-            SongDetails singleSong = new SongDetails(songName, artistName, R.id.songImage, "");
-            singleSong.playlistType = typeOfPlaylist;
-            singleSong.songID=festivalSongsList[i];
+            SongDetails singleSong = new SongDetails(songName, artistName);
+            singleSong.setPlaylistType(typeOfPlaylist);
+            singleSong.setSongID(festivalSongsList[i]);
             singleSong.setPosition(i);
+            singleSong.setSongID(R.drawable.music_player);
             songsList.add(singleSong);
         }
+
         if (fields.length == 0) {
             recyclerView.setVisibility(View.GONE);
             noSongsFound.setVisibility(View.VISIBLE);

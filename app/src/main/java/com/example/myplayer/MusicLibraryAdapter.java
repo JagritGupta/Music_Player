@@ -28,17 +28,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-public class MusicLibraryAdapter extends RecyclerView.Adapter<MusicLibraryAdapter.MusicViewHolder>  {
+public class MusicLibraryAdapter extends RecyclerView.Adapter<MusicLibraryAdapter.MusicViewHolder> {
 
     Context context;
-    ArrayList<SongDetails> songsList;
+    ArrayList<SongDetails> songsList = Utility.songsList;
     ArrayList<SongDetails> searchList;
-    String typeOfPlaylist="";
+    String typeOfPlaylist = "";
     private final int[] festivalSongsList = {R.raw.aa_aaye_navratre_ambe_maa, R.raw.jai_jaikaar_sukhwinder_singh, R.raw.lali_lali_laal_chunariya, R.raw.navraton_mein_ghar_mere_aayi};
 
 
-
-    public MusicLibraryAdapter(Context context, ArrayList<SongDetails> songsList,String typeOfPlaylist) {
+    public MusicLibraryAdapter(Context context, ArrayList<SongDetails> songsList, String typeOfPlaylist) {
         this.context = context;
         this.songsList = songsList;
         this.typeOfPlaylist = typeOfPlaylist;
@@ -74,32 +73,26 @@ public class MusicLibraryAdapter extends RecyclerView.Adapter<MusicLibraryAdapte
     public void onBindViewHolder(@NonNull final MusicViewHolder holder, final int position) {
 
         SongDetails songDetails = songsList.get(position);
-        holder.songTitle.setText(songDetails.getSongTitle());
-        holder.songDesc.setText(songDetails.getSongDesc());
-        Bitmap bm= BitmapFactory.decodeFile(songDetails.songAlbumArt);
-        holder.songImage.setImageBitmap(bm);
 
-
+        if (songDetails.playlistType == "Festival") {
+            holder.songTitle.setText(songDetails.getSongTitle());
+            holder.songDesc.setText(songDetails.getSongDesc());
+            holder.songImage.setImageResource(R.drawable.music_player);
+        } else {
+            holder.songTitle.setText(songDetails.getSongTitle());
+            holder.songDesc.setText(songDetails.getSongDesc());
+            /*Bitmap bm = BitmapFactory.decodeByteArray(songDetails.songAlbumArt, 0, songDetails.songAlbumArt.length);
+            holder.songImage.setImageBitmap(bm);*/
+        }
 
         holder.songLayout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
-                SongDetails songDetails =songsList.get(position);
                 String songName = songsList.get(position).songTitle;
-                Toast.makeText(context, songName , Toast.LENGTH_LONG).show();
-
-                if (songDetails.position>=0) {  //Festival type
-                    songDetails.setSongID(festivalSongsList[songDetails.position]);
-
-                }
-                else{
-                    songDetails.path=songDetails.getPath();
-                }
-
+                Toast.makeText(context, songName, Toast.LENGTH_LONG).show();
                 Intent i = new Intent(context, PlayerActivity.class);
-                i.putExtra("songObject",songDetails);
-                i.putExtra("position",position);
+                i.putExtra("position", position);
                 context.startActivity(i);
             }
         });

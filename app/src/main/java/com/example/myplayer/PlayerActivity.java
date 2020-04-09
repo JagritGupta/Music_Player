@@ -1,7 +1,13 @@
 package com.example.myplayer;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.Observer;
+import androidx.lifecycle.ViewModel;
+import androidx.lifecycle.ViewModelProvider;
+import androidx.lifecycle.ViewModelProviders;
+import androidx.room.Room;
 
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -27,11 +33,13 @@ import android.widget.Toast;
 import com.example.myplayer.Services.OnClearFromRecentServiceSearch;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 public class PlayerActivity extends AppCompatActivity implements Playable {
     Button prevBtn, nextBtn, next10, prev10;
-    ImageView pauseBtn, favouriteBtn, unFavouriteBtn,playSongImage;
+    ImageView pauseBtn, favouriteBtn, unFavouriteBtn, playSongImage;
     TextView songLabel, startTimer, endTimer;
     SeekBar seekBar;
     NotificationManager notificationManager;
@@ -43,6 +51,7 @@ public class PlayerActivity extends AppCompatActivity implements Playable {
     boolean isPlaying;
     Thread updateSeekBar;
     SongDetails songDetails;
+    RoomViewModel viewModel;
     private final int[] festivalSongsList = {R.raw.aa_aaye_navratre_ambe_maa, R.raw.jai_jaikaar_sukhwinder_singh, R.raw.lali_lali_laal_chunariya, R.raw.navraton_mein_ghar_mere_aayi};
     //Hash map
     //room-->id,name(hash map)
@@ -66,7 +75,7 @@ public class PlayerActivity extends AppCompatActivity implements Playable {
         prevBtn = findViewById(R.id.btn_prev);
         favouriteBtn = findViewById(R.id.favFilled);
         unFavouriteBtn = findViewById(R.id.favUnfilled);
-        playSongImage=findViewById(R.id.playSong_image);
+        playSongImage = findViewById(R.id.playSong_image);
         nextBtn = findViewById(R.id.btn_next);
         startTimer = findViewById(R.id.start_timer);
         endTimer = findViewById(R.id.end_timer);
@@ -74,7 +83,6 @@ public class PlayerActivity extends AppCompatActivity implements Playable {
         seekBar = findViewById(R.id.seek_bar);
         next10 = findViewById(R.id.forward_ten);
         prev10 = findViewById(R.id.prev_ten);
-
         getSupportActionBar().setTitle("Now Playing");
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setDisplayShowHomeEnabled(true);
@@ -106,9 +114,8 @@ public class PlayerActivity extends AppCompatActivity implements Playable {
         Intent intent = getIntent();
         Bundle bundle = intent.getExtras();
         songsList = Utility.getSongsList();
-        //songDetails = (SongDetails) bundle.get("songObject");
         position = bundle.getInt("position");
-        songDetails=Utility.songsList.get(position);
+        songDetails = Utility.songsList.get(position);
         displayIntoMediaPlayer(songDetails);
         playMedia(songDetails);
 
@@ -164,6 +171,7 @@ public class PlayerActivity extends AppCompatActivity implements Playable {
                 mediaPlayer.release();
                 position = (position + 1) % songsList.size();
                 songDetails = songsList.get(position);
+                displayIntoMediaPlayer(songDetails);
                 playMedia(songDetails);
             }
         });
@@ -177,6 +185,7 @@ public class PlayerActivity extends AppCompatActivity implements Playable {
                 if (position < 0)
                     position = songsList.size() - 1;
                 songDetails = songsList.get(position);
+                displayIntoMediaPlayer(songDetails);
                 playMedia(songDetails);
             }
         });
@@ -218,6 +227,15 @@ public class PlayerActivity extends AppCompatActivity implements Playable {
                 Toast.makeText(PlayerActivity.this, "Song Added to your favourites", Toast.LENGTH_SHORT).show();
                 unFavouriteBtn.setVisibility(View.GONE);
                 favouriteBtn.setVisibility(View.VISIBLE);
+
+                //Code to insert
+                final String uniqueID=UUID.randomUUID().toString();
+                SongEntity song=new SongEntity(uniqueID,songDetails);
+
+                viewModel= ViewModelProviders.of(PlayerActivity.this).get(RoomViewModel.class);
+                viewModel.insert(song);
+
+
             }
         });
 
@@ -227,6 +245,8 @@ public class PlayerActivity extends AppCompatActivity implements Playable {
                 Toast.makeText(PlayerActivity.this, "Song removed from your favourites", Toast.LENGTH_SHORT).show();
                 unFavouriteBtn.setVisibility(View.VISIBLE);
                 favouriteBtn.setVisibility(View.GONE);
+
+
             }
         });
     }
@@ -254,7 +274,7 @@ public class PlayerActivity extends AppCompatActivity implements Playable {
     public void onBackPressed() {
         super.onBackPressed();
         onResume();
-        MainActivity.miniPlayerAccess(true,songDetails);
+        MainActivity.miniPlayerAccess(true, songDetails);
     }
 
     public void callResetSeekBar() {
@@ -294,15 +314,14 @@ public class PlayerActivity extends AppCompatActivity implements Playable {
 
     public void playMedia(SongDetails songDetails) {
 
-        if (songDetails.position >= 0) {                     //type FESTIVAL
+        if (songDetails.playlistType == "Festival") {                     //type FESTIVAL
 
-            mediaPlayer = MediaPlayer.create(getApplicationContext(), songDetails.songID);
+            mediaPlayer = MediaPlayer.create(getApplicationContext(), festivalSongsList[songDetails.position]);
             mediaPlayer.start();
 
         } else {            //type DOWNLOADS
 
-            Uri uri = Uri.parse(songDetails.path);                  // HELP
-            //Uri uri = Uri.parse(MainActivity.mySongs.get(position).toString());
+            Uri uri = Uri.parse(songDetails.path);
             mediaPlayer = MediaPlayer.create(getApplicationContext(), uri);
             mediaPlayer.start();
 
@@ -319,19 +338,26 @@ public class PlayerActivity extends AppCompatActivity implements Playable {
         }
     }
 
-    public void displayIntoMediaPlayer(SongDetails songDetails){
+    public void displayIntoMediaPlayer(SongDetails songDetails) {
 
         sName = songDetails.songTitle;
         String songName = songDetails.songTitle;
         sName.replace(".mp3", "").replace(".wav", "");
         songName.replace(".mp3", "").replace(".wav", "");
-        Toast.makeText(PlayerActivity.this, songName, Toast.LENGTH_LONG).show();
-        Bitmap bm= BitmapFactory.decodeFile(songDetails.songAlbumArt);
-        playSongImage.setImageBitmap(bm);
         songLabel.setText(songName);
         songLabel.setSelected(true);
+        Toast.makeText(PlayerActivity.this, songName, Toast.LENGTH_LONG).show();
+        if (songDetails.playlistType == "Festival") {
+            playSongImage.setImageResource(R.drawable.music_player);
+        } else {
+            Bitmap bm = BitmapFactory.decodeByteArray(songDetails.songAlbumArt, 0, songDetails.songAlbumArt.length);
+            playSongImage.setImageBitmap(bm);
+        }
+
 
     }
+
+
 
     //Below Four function are from Playable interface for Notifcations usage
 

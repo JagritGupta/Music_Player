@@ -20,17 +20,24 @@ public class CreateNotification {
     public static final String ACTION_PREVIOUS = "actionprevious";
     public static final String ACTION_PLAY = "actionplay";
     public static final String ACTION_NEXT = "actionnext";
-
     public static Notification notification;
 
     public static void createNotification(Context context, SongDetails songDetails, int playBtn, int pos, int size) {
+        Bitmap bm;
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             Toast.makeText(context,"Integer.toString(Build.LLLLVERSION.SDK_INT)",Toast.LENGTH_LONG).show();
 
             NotificationManagerCompat notificationManagerCompat=NotificationManagerCompat.from(context);
             MediaSessionCompat mediaSessionCompat=new MediaSessionCompat(context,"tag");
 
-            Bitmap icon= BitmapFactory.decodeFile(songDetails.songAlbumArt);
+
+            if(songDetails.playlistType=="Festival"){
+                bm = BitmapFactory.decodeResource(context.getResources(),R.drawable.music_player);
+            }
+            else {
+                bm = BitmapFactory.decodeByteArray(songDetails.songAlbumArt, 0, songDetails.songAlbumArt.length);
+            }
 
             PendingIntent pendingIntentPrevious;
             int drw_prvs;
@@ -50,6 +57,8 @@ public class CreateNotification {
                     .setAction(ACTION_PLAY);
             PendingIntent pendingIntentPlay=PendingIntent.getBroadcast(context,0,
                     intentPlay,PendingIntent.FLAG_UPDATE_CURRENT);
+            int drw_play=R.drawable.blue_smoke;
+
 
             PendingIntent pendingIntentNext;
             int drw_next;
@@ -71,12 +80,12 @@ public class CreateNotification {
                     .setSmallIcon(R.drawable.music_player)
                     .setContentTitle(songDetails.getSongTitle())
                     .setContentText(songDetails.getSongDesc())
-                    .setLargeIcon(icon)
+                    .setLargeIcon(bm)
                     .setOnlyAlertOnce(true)
                     .setShowWhen(false)
                     .addAction(drw_prvs,"Previous",pendingIntentPrevious)
-                    .addAction(playBtn,"Previous",pendingIntentPlay)
-                    .addAction(drw_next,"Previous",pendingIntentNext)
+                    .addAction(playBtn,"Play",pendingIntentPlay)
+                    .addAction(drw_next,"Next",pendingIntentNext)
                     .setStyle(new androidx.media.app.NotificationCompat.MediaStyle()
                         .setShowActionsInCompactView(0,1,2)
                         .setMediaSession(mediaSessionCompat.getSessionToken()))

@@ -3,49 +3,38 @@ package com.example.myplayer;//Singleton Class
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import java.util.ArrayList;
 
 public class SongDetails implements Parcelable {
-    String songTitle,songDesc;
 
-    public String getSongAlbumArt() {
-        return songAlbumArt;
-    }
+    String songTitle;
+    String songDesc;
+    byte[] songAlbumArt;
+    int position = -1;
+    int songImageID;
+    public int songID = 0;
+    String path = null;
+    String playlistType;
+    int totalDuration;
 
-    public void setSongAlbumArt(String songAlbumArt) {
+
+    public SongDetails(String songTitle, String songDesc, byte[] songAlbumArt) {
+        this.songTitle = songTitle;
+        this.songDesc = songDesc;
         this.songAlbumArt = songAlbumArt;
     }
 
-    String songAlbumArt;
-    int songImageID;
-    int position=-1;
-    private static ArrayList<SongDetails> songsList;
-    public int songID=0;
-    String path=null,playlistType;
-    int totalDuration;
 
-    public static ArrayList<SongDetails> getSongsList() {
-        return songsList;
-    }
-
-
-    public SongDetails(ArrayList<SongDetails> songsList){
-        this.songsList=songsList;
-    }
-
-    public SongDetails(String songTitle, String songDesc, int songImageID,String songAlbumArt) {
+    public SongDetails(String songTitle, String songDesc) {
         this.songTitle = songTitle;
         this.songDesc = songDesc;
-        this.songImageID = songImageID;
-        this.songAlbumArt=songAlbumArt;
     }
 
-    public SongDetails(){    }
+    public SongDetails() {
+    }
 
     protected SongDetails(Parcel in) {
         songTitle = in.readString();
         songDesc = in.readString();
-        songImageID = in.readInt();
         position = in.readInt();
         songID = in.readInt();
         totalDuration = in.readInt();
@@ -55,7 +44,6 @@ public class SongDetails implements Parcelable {
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeString(songTitle);
         dest.writeString(songDesc);
-        dest.writeInt(songImageID);
         dest.writeInt(position);
         dest.writeInt(songID);
         dest.writeInt(totalDuration);
@@ -86,22 +74,36 @@ public class SongDetails implements Parcelable {
         return songDesc;
     }
 
-    public int getSongImageID() {
-        return songImageID;
+    public byte[] getSongAlbumArt() {
+        return songAlbumArt;
     }
 
     public int getPosition() {
         return position;
     }
 
+    public int getSongImageID() {
+        return songImageID;
+    }
+
     public int getSongID() {
         return songID;
     }
 
+    public String getPath() {
+        return path;
+    }
 
+    public String getPlaylistType() {
+        return playlistType;
+    }
 
     public int getTotalDuration() {
         return totalDuration;
+    }
+
+    public static Creator<SongDetails> getCREATOR() {
+        return CREATOR;
     }
 
     public void setSongTitle(String songTitle) {
@@ -112,40 +114,31 @@ public class SongDetails implements Parcelable {
         this.songDesc = songDesc;
     }
 
-    public void setSongImageID(int songImageID) {
-        this.songImageID = songImageID;
+    public void setSongAlbumArt(byte[] songAlbumArt) {
+        this.songAlbumArt = songAlbumArt;
     }
 
     public void setPosition(int position) {
         this.position = position;
     }
 
-    public static void setSongsList(ArrayList<SongDetails> songsList) {
-        SongDetails.songsList = songsList;
+    public void setSongImageID(int songImageID) {
+        this.songImageID = songImageID;
     }
 
     public void setSongID(int songID) {
         this.songID = songID;
     }
 
-    public String getPath() {
-        return path;
-    }
-
     public void setPath(String path) {
         this.path = path;
-    }
-
-    public void setTotalDuration(int totalDuration) {
-        this.totalDuration = totalDuration;
-    }
-
-    public String getPlaylistType() {
-        return playlistType;
     }
 
     public void setPlaylistType(String playlistType) {
         this.playlistType = playlistType;
     }
 
+    public void setTotalDuration(int totalDuration) {
+        this.totalDuration = totalDuration;
+    }
 }
