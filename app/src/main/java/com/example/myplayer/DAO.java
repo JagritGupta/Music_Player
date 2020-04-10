@@ -2,6 +2,7 @@ package com.example.myplayer;
 
 import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
+import androidx.room.Delete;
 import androidx.room.Insert;
 import androidx.room.Query;
 
@@ -15,6 +16,9 @@ public interface DAO {
 
     @Query("SELECT * FROM songsList")
     LiveData<List<SongEntity>> getAllFavSongs();
+
+    @Delete
+    int deleteSong(SongEntity songEntity);
 
 
 }

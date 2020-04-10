@@ -19,7 +19,7 @@ public class RoomViewModel extends AndroidViewModel {
         super(application);
         roomDB = SongRoomDatabase.getDatabase(application);
         dao = roomDB.dao();
-        allFavSongs=dao.getAllFavSongs();
+        allFavSongs = dao.getAllFavSongs();
     }
 
     @Override
@@ -31,7 +31,11 @@ public class RoomViewModel extends AndroidViewModel {
         new InsertAsyncTask(dao).execute(songEntity);
     }
 
-    LiveData<List<SongEntity>> fetchAllFavSongs(){
+    public void deleteSong(SongEntity songEntity) {
+        new DeleteAsyncTask(dao).execute(songEntity);
+    }
+
+    LiveData<List<SongEntity>> fetchAllFavSongs() {
         return allFavSongs;
     }
 
@@ -46,6 +50,21 @@ public class RoomViewModel extends AndroidViewModel {
         @Override
         protected Void doInBackground(SongEntity... songEntities) {
             myDao.insert(songEntities[0]);
+            return null;
+        }
+    }
+
+    private class DeleteAsyncTask extends AsyncTask<SongEntity, Void, Void> {
+
+        DAO myDao;
+
+        public DeleteAsyncTask(DAO myDao) {
+            this.myDao = myDao;
+        }
+
+        @Override
+        protected Void doInBackground(SongEntity... songEntities) {
+            myDao.deleteSong(songEntities[0]);
             return null;
         }
     }

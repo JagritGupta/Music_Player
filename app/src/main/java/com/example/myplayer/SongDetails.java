@@ -9,12 +9,11 @@ public class SongDetails implements Parcelable {
     String songTitle;
     String songDesc;
     byte[] songAlbumArt;
-    int position = -1;
-    int songImageID;
-    public int songID = 0;
-    String path = null;
+    int position = -1;    //position variable is used for playing Festival songs
+    String songID;
+    String path = null;   //path variable is used for playing Download songs
     String playlistType;
-    int totalDuration;
+    boolean isFavourite;
 
 
     public SongDetails(String songTitle, String songDesc, byte[] songAlbumArt) {
@@ -36,8 +35,7 @@ public class SongDetails implements Parcelable {
         songTitle = in.readString();
         songDesc = in.readString();
         position = in.readInt();
-        songID = in.readInt();
-        totalDuration = in.readInt();
+        songID = in.readString();
     }
 
     @Override
@@ -45,8 +43,7 @@ public class SongDetails implements Parcelable {
         dest.writeString(songTitle);
         dest.writeString(songDesc);
         dest.writeInt(position);
-        dest.writeInt(songID);
-        dest.writeInt(totalDuration);
+        dest.writeString(songID);
     }
 
     public static final Creator<SongDetails> CREATOR = new Creator<SongDetails>() {
@@ -82,11 +79,7 @@ public class SongDetails implements Parcelable {
         return position;
     }
 
-    public int getSongImageID() {
-        return songImageID;
-    }
-
-    public int getSongID() {
+    public String getSongID() {
         return songID;
     }
 
@@ -98,12 +91,16 @@ public class SongDetails implements Parcelable {
         return playlistType;
     }
 
-    public int getTotalDuration() {
-        return totalDuration;
-    }
-
     public static Creator<SongDetails> getCREATOR() {
         return CREATOR;
+    }
+
+    public boolean isFavourite() {
+        return isFavourite;
+    }
+
+    public void setIsFavourite(boolean favourite) {
+        isFavourite = favourite;
     }
 
     public void setSongTitle(String songTitle) {
@@ -122,11 +119,7 @@ public class SongDetails implements Parcelable {
         this.position = position;
     }
 
-    public void setSongImageID(int songImageID) {
-        this.songImageID = songImageID;
-    }
-
-    public void setSongID(int songID) {
+    public void setSongID(String songID) {
         this.songID = songID;
     }
 
@@ -136,9 +129,5 @@ public class SongDetails implements Parcelable {
 
     public void setPlaylistType(String playlistType) {
         this.playlistType = playlistType;
-    }
-
-    public void setTotalDuration(int totalDuration) {
-        this.totalDuration = totalDuration;
     }
 }

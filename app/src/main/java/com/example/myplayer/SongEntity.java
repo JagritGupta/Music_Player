@@ -7,24 +7,21 @@ import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
 @Entity(tableName = "songsList")
-public class SongEntity {
-    /*@NonNull
-    String path = null;*/
+public class SongEntity {             //use of this class is same as SongDetails... but this is used for RoomDatabse
 
     @PrimaryKey
     @NonNull
-    String id;
+    String songID;
 
     @NonNull
     @ColumnInfo(name = "songName")
-    String songTitle;
+    private String songTitle;
 
     @NonNull
     @ColumnInfo(name = "songDesc")
-    String songDesc;  //Blob datatype for bytearray
+    private String songDesc;
 
-
-    /*@NonNull
+    @NonNull
     @ColumnInfo(name = "songAlbumArt")
     byte[] songAlbumArt;
 
@@ -34,32 +31,30 @@ public class SongEntity {
 
     @NonNull
     @ColumnInfo(name = "position")
-    int position = -1;
+    int position = -1;    //position variable is used for playing Festival songs
+
+    String songPath;      //songPath variable is used for playing Download songs
+
+    boolean isFavourite;
 
     @NonNull
     @ColumnInfo(name = "songImageID")
     int songImageID;
 
-    public int songID = 0;
-    int totalDuration;*/
-
-    public SongEntity(String uniqueID, SongDetails songDetails) {
-        this.id = uniqueID;
+    public SongEntity(SongDetails songDetails) {
         this.songTitle = songDetails.songTitle;
         this.songDesc = songDetails.songDesc;
+        this.songAlbumArt = songDetails.songAlbumArt;
+        this.playlistType = songDetails.playlistType;
+        this.position = songDetails.position;
+        this.songID = songDetails.songID;
+        this.isFavourite=songDetails.isFavourite;
+        this.songPath = songDetails.path;
     }
+
 
     public SongEntity() {
     }
-
-    /* @NonNull
-    public String getPath() {
-        return path;
-    }
-
-    public void setPath(@NonNull String path) {
-        this.path = path;
-    }*/
 
     @NonNull
     public String getSongTitle() {
@@ -79,15 +74,7 @@ public class SongEntity {
         this.songDesc = songDesc;
     }
 
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    /* @NonNull
+    @NonNull
     public byte[] getSongAlbumArt() {
         return songAlbumArt;
     }
@@ -121,20 +108,28 @@ public class SongEntity {
         this.songImageID = songImageID;
     }
 
-    public int getSongID() {
+    public String getSongID() {
         return songID;
     }
 
-    public void setSongID(int songID) {
+    public void setSongID(String songID) {
         this.songID = songID;
     }
 
-    public int getTotalDuration() {
-        return totalDuration;
+    public String getSongPath() {
+        return songPath;
     }
 
-    public void setTotalDuration(int totalDuration) {
-        this.totalDuration = totalDuration;
-    }*/
+    public void setSongPath(String songPath) {
+        this.songPath = songPath;
+    }
+
+    public boolean isFavourite() {
+        return isFavourite;
+    }
+
+    public void setFavourite(boolean favourite) {
+        isFavourite = favourite;
+    }
 }
 

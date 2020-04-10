@@ -34,7 +34,6 @@ public class MusicLibraryAdapter extends RecyclerView.Adapter<MusicLibraryAdapte
     ArrayList<SongDetails> songsList = Utility.songsList;
     ArrayList<SongDetails> searchList;
     String typeOfPlaylist = "";
-    private final int[] festivalSongsList = {R.raw.aa_aaye_navratre_ambe_maa, R.raw.jai_jaikaar_sukhwinder_singh, R.raw.lali_lali_laal_chunariya, R.raw.navraton_mein_ghar_mere_aayi};
 
 
     public MusicLibraryAdapter(Context context, ArrayList<SongDetails> songsList, String typeOfPlaylist) {
@@ -72,7 +71,7 @@ public class MusicLibraryAdapter extends RecyclerView.Adapter<MusicLibraryAdapte
     @Override
     public void onBindViewHolder(@NonNull final MusicViewHolder holder, final int position) {
 
-        SongDetails songDetails = songsList.get(position);
+        final SongDetails songDetails = songsList.get(position);
 
         if (songDetails.playlistType == "Festival") {
             holder.songTitle.setText(songDetails.getSongTitle());
@@ -81,8 +80,16 @@ public class MusicLibraryAdapter extends RecyclerView.Adapter<MusicLibraryAdapte
         } else {
             holder.songTitle.setText(songDetails.getSongTitle());
             holder.songDesc.setText(songDetails.getSongDesc());
-            /*Bitmap bm = BitmapFactory.decodeByteArray(songDetails.songAlbumArt, 0, songDetails.songAlbumArt.length);
-            holder.songImage.setImageBitmap(bm);*/
+            Bitmap bm = BitmapFactory.decodeByteArray(songDetails.songAlbumArt, 0, songDetails.songAlbumArt.length);
+            holder.songImage.setImageBitmap(bm);
+        }
+
+        if (songDetails.isFavourite()) {
+            holder.unFavBtn.setTag(1);
+            holder.unFavBtn.setImageResource(R.drawable.fav_filled);
+        } else {
+            holder.unFavBtn.setTag(null);
+            holder.unFavBtn.setImageResource(R.drawable.fav);
         }
 
         holder.songLayout.setOnClickListener(new View.OnClickListener() {
@@ -93,6 +100,11 @@ public class MusicLibraryAdapter extends RecyclerView.Adapter<MusicLibraryAdapte
                 Toast.makeText(context, songName, Toast.LENGTH_LONG).show();
                 Intent i = new Intent(context, PlayerActivity.class);
                 i.putExtra("position", position);
+                if (typeOfPlaylist == "Favourites") {
+                    i.putExtra("isFavouriteMenu", true);
+                } else {
+                    i.putExtra("isFavouriteMenu", false);
+                }
                 context.startActivity(i);
             }
         });
@@ -104,10 +116,12 @@ public class MusicLibraryAdapter extends RecyclerView.Adapter<MusicLibraryAdapte
                     Toast.makeText(context, "Song added to Favourites", Toast.LENGTH_LONG).show();
                     holder.unFavBtn.setTag(1);
                     holder.unFavBtn.setImageResource(R.drawable.fav_filled);
+                    songDetails.setIsFavourite(true);
                 } else {
                     Toast.makeText(context, "Song removed from Favourites", Toast.LENGTH_LONG).show();
                     holder.unFavBtn.setTag(null);
                     holder.unFavBtn.setImageResource(R.drawable.fav);
+                    songDetails.setIsFavourite(false);
                 }
             }
         });

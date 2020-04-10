@@ -1,13 +1,8 @@
 package com.example.myplayer;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.lifecycle.Observer;
-import androidx.lifecycle.ViewModel;
-import androidx.lifecycle.ViewModelProvider;
 import androidx.lifecycle.ViewModelProviders;
-import androidx.room.Room;
 
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -33,13 +28,12 @@ import android.widget.Toast;
 import com.example.myplayer.Services.OnClearFromRecentServiceSearch;
 
 import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 public class PlayerActivity extends AppCompatActivity implements Playable {
     Button prevBtn, nextBtn, next10, prev10;
-    ImageView pauseBtn, favouriteBtn, unFavouriteBtn, playSongImage;
+    static ImageView setToUnfavouriteBtn, setToFavouriteBtn;
+    ImageView pauseBtn, playSongImage;
     TextView songLabel, startTimer, endTimer;
     SeekBar seekBar;
     NotificationManager notificationManager;
@@ -48,10 +42,12 @@ public class PlayerActivity extends AppCompatActivity implements Playable {
     static MediaPlayer mediaPlayer;
     int currentPosition, position, totalDuration;
     ArrayList<SongDetails> songsList;
+    boolean isFavouriteMenuMode = false;
     boolean isPlaying;
     Thread updateSeekBar;
     SongDetails songDetails;
     RoomViewModel viewModel;
+    SongEntity song;
     private final int[] festivalSongsList = {R.raw.aa_aaye_navratre_ambe_maa, R.raw.jai_jaikaar_sukhwinder_singh, R.raw.lali_lali_laal_chunariya, R.raw.navraton_mein_ghar_mere_aayi};
     //Hash map
     //room-->id,name(hash map)
@@ -73,8 +69,8 @@ public class PlayerActivity extends AppCompatActivity implements Playable {
 
         pauseBtn = findViewById(R.id.btn_pause);
         prevBtn = findViewById(R.id.btn_prev);
-        favouriteBtn = findViewById(R.id.favFilled);
-        unFavouriteBtn = findViewById(R.id.favUnfilled);
+        setToUnfavouriteBtn = findViewById(R.id.favFilled);
+        setToFavouriteBtn = findViewById(R.id.favUnfilled);
         playSongImage = findViewById(R.id.playSong_image);
         nextBtn = findViewById(R.id.btn_next);
         startTimer = findViewById(R.id.start_timer);
@@ -115,6 +111,7 @@ public class PlayerActivity extends AppCompatActivity implements Playable {
         Bundle bundle = intent.getExtras();
         songsList = Utility.getSongsList();
         position = bundle.getInt("position");
+        isFavouriteMenuMode = bundle.getBoolean("isFavouriteMenu");
         songDetails = Utility.songsList.get(position);
         displayIntoMediaPlayer(songDetails);
         playMedia(songDetails);
@@ -221,32 +218,33 @@ public class PlayerActivity extends AppCompatActivity implements Playable {
             }
         });
 
-        unFavouriteBtn.setOnClickListener(new View.OnClickListener() {
+        setToFavouriteBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Toast.makeText(PlayerActivity.this, "Song Added to your favourites", Toast.LENGTH_SHORT).show();
-                unFavouriteBtn.setVisibility(View.GONE);
-                favouriteBtn.setVisibility(View.VISIBLE);
-
+                setToFavouriteBtn.setVisibility(View.GONE);
+                setToUnfavouriteBtn.setVisibility(View.VISIBLE);
+                songDetails.setIsFavourite(true);
+                Utility.songsList.get(position).setIsFavourite(true);
                 //Code to insert
-                final String uniqueID=UUID.randomUUID().toString();
-                SongEntity song=new SongEntity(uniqueID,songDetails);
-
-                viewModel= ViewModelProviders.of(PlayerActivity.this).get(RoomViewModel.class);
+                song = new SongEntity(songDetails);
+                viewModel = ViewModelProviders.of(PlayerActivity.this).get(RoomViewModel.class);
                 viewModel.insert(song);
-
 
             }
         });
 
-        favouriteBtn.setOnClickListener(new View.OnClickListener() {
+        setToUnfavouriteBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Toast.makeText(PlayerActivity.this, "Song removed from your favourites", Toast.LENGTH_SHORT).show();
-                unFavouriteBtn.setVisibility(View.VISIBLE);
-                favouriteBtn.setVisibility(View.GONE);
-
-
+                songDetails.setIsFavourite(false);
+                Utility.songsList.get(position).setIsFavourite(true);
+                viewModel = ViewModelProviders.of(PlayerActivity.this).get(RoomViewModel.class);
+                SongEntity song = new SongEntity(songDetails);
+                viewModel.deleteSong(song);
+                setToFavouriteBtn.setVisibility(View.VISIBLE);
+                setToUnfavouriteBtn.setVisibility(View.GONE);
             }
         });
     }
@@ -275,6 +273,13 @@ public class PlayerActivity extends AppCompatActivity implements Playable {
         super.onBackPressed();
         onResume();
         MainActivity.miniPlayerAccess(true, songDetails);
+
+        if (isFavouriteMenuMode == true && !songDetails.isFavourite()) {
+            songsList.remove(songDetails);
+            Utility.setSongsList(songsList);
+            //MusicLibraryAdapter musicLibraryAdapter=new MusicLibraryAdapter(PlayerActivity.this,songsList,"");
+            //musicLibraryAdapter.updateList(songsList);
+        }
     }
 
     public void callResetSeekBar() {
@@ -354,9 +359,16 @@ public class PlayerActivity extends AppCompatActivity implements Playable {
             playSongImage.setImageBitmap(bm);
         }
 
+        if (songDetails.isFavourite()) {
+            setToFavouriteBtn.setVisibility(View.GONE);
+            setToUnfavouriteBtn.setVisibility(View.VISIBLE);
+        } else {
+            setToFavouriteBtn.setVisibility(View.VISIBLE);
+            setToUnfavouriteBtn.setVisibility(View.GONE);
+        }
+
 
     }
-
 
 
     //Below Four function are from Playable interface for Notifcations usage

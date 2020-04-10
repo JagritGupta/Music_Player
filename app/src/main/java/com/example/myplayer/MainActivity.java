@@ -1,9 +1,11 @@
 package com.example.myplayer;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProviders;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -32,8 +34,10 @@ import android.widget.Toast;
 import java.io.File;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.UUID;
 
 import static java.util.Collections.sort;
 
@@ -43,10 +47,12 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
     MusicLibraryAdapter musicLibraryAdapter;
     ArrayList<SongDetails> songsList = null;
     ArrayList<SongDetails> songsFilterList = null;
+    HashMap<String, String> songFavMap = null;
     String artistName = "Artist Name";
     public static RelativeLayout miniPlayerLayout, miniSongInfoLayout;
     public static TextView miniSongTitle, miniSongDesc;
     public static ImageView miniPlayPauseBtn, miniSongImg;
+    static int pos = 0;
     RoomViewModel viewModel;
 
     private final int[] festivalSongsList = {R.raw.aa_aaye_navratre_ambe_maa, R.raw.jai_jaikaar_sukhwinder_singh, R.raw.lali_lali_laal_chunariya, R.raw.navraton_mein_ghar_mere_aayi};
@@ -118,28 +124,17 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
 
             case "Favourites":
                 Toast.makeText(MainActivity.this, "Your favourites", Toast.LENGTH_SHORT).show();
-                viewModel= ViewModelProviders.of(MainActivity.this).get(RoomViewModel.class);
-                viewModel.fetchAllFavSongs().observe(MainActivity.this, new Observer<List<SongEntity>>() {
-                    @Override
-                    public void onChanged(List<SongEntity> songEntities) {
-                        if(songEntities.size()==0){
-                            noSongsFound.setVisibility(View.VISIBLE);
-                        }
-                        else{
-                            for(int i=0;i<songEntities.size();i++){
-                                SongDetails singleSong=new SongDetails();
-                                singleSong.setSongTitle(songEntities.get(i).songTitle);
-                                singleSong.setSongDesc(songEntities.get(i).songDesc);
-                                singleSong.setPlaylistType("Downloads");
-                                songsList.add(singleSong);
-                            }
-                        }
-                    }
-                });
+                songFavMap = new HashMap<String, String>();
+                new ItemTouchHelper(itemTouchHelperCallback).attachToRecyclerView(recyclerView);
+                fetchFavouriteSongs();
+                typeOfPlaylist = "Favourites";
                 return songsList;
 
             case "Downloads":
                 Toast.makeText(MainActivity.this, "Downloads", Toast.LENGTH_SHORT).show();
+                pos = 0;
+                songFavMap = new HashMap<>();
+                //fetchFavouriteSongs();
                 fetchDownloadSongs((Environment.getExternalStorageDirectory()));
 
                 if (songsList.size() == 0) {
@@ -167,38 +162,6 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
         return null;
     }
 
-    public void fetchDownloadSongs(File file) {
-        File[] files = file.listFiles();
-
-        if (files != null) {
-            for (File singleFile : files) {
-                if (singleFile.isDirectory() && !singleFile.isHidden()) {
-                    fetchDownloadSongs(singleFile);
-                }
-                else {
-                    if (singleFile.getName().endsWith(".mp3") || singleFile.getName().endsWith(".wav") || singleFile.getName().endsWith(".m4a")) {
-
-                        String path = singleFile.getPath();
-                        MediaMetadataRetriever metaRetriver = new MediaMetadataRetriever();
-                        metaRetriver.setDataSource(path);
-
-                        try {
-                            String albumName = metaRetriver.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM);
-                            String artistName = metaRetriver.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST);
-                            byte[] albumArt = metaRetriver.getEmbeddedPicture();
-                            SongDetails singleSong = new SongDetails(albumName, artistName, albumArt);
-                            singleSong.setPath(path);
-                            singleSong.setPlaylistType("Downloads");
-                            songsList.add(singleSong);
-                        } catch (Exception e) {
-
-                        }
-                    }
-                }
-            }
-        }
-    }
-
 
     public void fetchFestivalSongs() {
         typeOfPlaylist = "Festival";
@@ -208,9 +171,9 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
             String songName = fields[i].getName().replace("_", " ");
             SongDetails singleSong = new SongDetails(songName, artistName);
             singleSong.setPlaylistType(typeOfPlaylist);
-            singleSong.setSongID(festivalSongsList[i]);
+            String songID = "Fest" + UUID.randomUUID().toString();
+            singleSong.setSongID(songID);
             singleSong.setPosition(i);
-            singleSong.setSongID(R.drawable.music_player);
             songsList.add(singleSong);
         }
 
@@ -219,6 +182,72 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
             noSongsFound.setVisibility(View.VISIBLE);
         }
     }
+
+    public void fetchFavouriteSongs() {
+        viewModel = ViewModelProviders.of(MainActivity.this).get(RoomViewModel.class);
+        viewModel.fetchAllFavSongs().observe(MainActivity.this, new Observer<List<SongEntity>>() {
+            @Override
+            public void onChanged(List<SongEntity> songEntities) {
+                if (songEntities.size() == 0) {
+                    noSongsFound.setVisibility(View.VISIBLE);
+                } else {
+                    for (int i = 0; i < songEntities.size(); i++) {
+                        SongDetails singleSong = new SongDetails();
+                        singleSong.setSongTitle(songEntities.get(i).getSongTitle());
+                        singleSong.setSongDesc(songEntities.get(i).getSongDesc());
+                        singleSong.setPlaylistType(songEntities.get(i).getPlaylistType());
+                        singleSong.setSongAlbumArt(songEntities.get(i).getSongAlbumArt());
+                        singleSong.setPosition(songEntities.get(i).getPosition());
+                        singleSong.setPath(songEntities.get(i).getSongPath());
+                        singleSong.setIsFavourite(songEntities.get(i).isFavourite());
+                        singleSong.setSongID(songEntities.get(i).getSongID());
+                        songsList.add(singleSong);
+                        String songID = songEntities.get(i).getSongID();
+                        songFavMap.put(songID, "singleSong");
+
+                    }
+                }
+            }
+        });
+    }
+
+    public void fetchDownloadSongs(File file) {
+        File[] files = file.listFiles();
+        if (files != null) {
+            for (File singleFile : files) {
+                if (singleFile.isDirectory() && !singleFile.isHidden()) {
+                    fetchDownloadSongs(singleFile);
+                } else {
+                    try {
+                        if (singleFile.getName().endsWith(".mp3") || singleFile.getName().endsWith(".wav") || singleFile.getName().endsWith(".m4a")) {
+
+                            String path = singleFile.getPath();
+                            MediaMetadataRetriever metaRetriver = new MediaMetadataRetriever();
+                            metaRetriver.setDataSource(path);
+                            String albumName = metaRetriver.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM);
+                            String artistName = metaRetriver.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST);
+                            byte[] albumArt = metaRetriver.getEmbeddedPicture();
+                            SongDetails singleSong = new SongDetails(albumName, artistName, albumArt);
+                            singleSong.setPath(path);
+                            singleSong.setPlaylistType("Downloads");
+                            String songID = "Down" + pos;
+                            pos += 1;
+                            if (songFavMap != null && songFavMap.containsKey(songID)) {
+                                Toast.makeText(MainActivity.this, "YESSSSSSSSSSSSSSSSS", Toast.LENGTH_LONG).show();
+                            } else {
+                                Toast.makeText(MainActivity.this, "NOOOOO", Toast.LENGTH_SHORT).show();
+                            }
+                            singleSong.setSongID(songID);
+                            songsList.add(singleSong);
+                        }
+                    } catch (Exception e) {
+                        Log.d("Offoo", "Error");
+                    }
+                }
+            }
+        }
+    }
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -266,4 +295,21 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
         }
         return true;
     }
+
+    ItemTouchHelper.SimpleCallback itemTouchHelperCallback = new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.RIGHT | ItemTouchHelper.LEFT) {
+        @Override
+        public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
+            return false;
+        }
+
+        @Override
+        public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+            viewModel = ViewModelProviders.of(MainActivity.this).get(RoomViewModel.class);
+            SongEntity song = new SongEntity(songsList.get(viewHolder.getAdapterPosition()));
+            viewModel.deleteSong(song);
+            songsList.remove(viewHolder.getAdapterPosition());
+            Utility.setSongsList(songsList);
+            musicLibraryAdapter.notifyDataSetChanged();
+        }
+    };
 }
