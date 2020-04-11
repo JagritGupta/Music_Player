@@ -25,6 +25,10 @@
 
         <receiver android:name=".Services.NotificationActionService" />
 
+       <!-- <service
+            android:name = ".MyService"
+            android:enabled = "true" />-->
+
         <service android:name=".Services.OnClearFromRecentServiceSearch" />
     </application>
 

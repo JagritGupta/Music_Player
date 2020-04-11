@@ -17,6 +17,7 @@ import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
@@ -30,7 +31,7 @@ import com.example.myplayer.Services.OnClearFromRecentServiceSearch;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
-public class PlayerActivity extends AppCompatActivity implements Playable {
+public class PlayerActivity extends AppCompatActivity{
     Button prevBtn, nextBtn, next10, prev10;
     static ImageView setToUnfavouriteBtn, setToFavouriteBtn;
     ImageView pauseBtn, playSongImage;
@@ -38,12 +39,11 @@ public class PlayerActivity extends AppCompatActivity implements Playable {
     SeekBar seekBar;
     NotificationManager notificationManager;
     String sName;
-    BroadcastReceiver broadcastReceiver;
     static MediaPlayer mediaPlayer;
-    int currentPosition, position, totalDuration;
+    int currentPosition, recyclerViewPosition, totalDuration;
     ArrayList<SongDetails> songsList;
     boolean isFavouriteMenuMode = false;
-    boolean isPlaying;
+    boolean isPlaying = true;
     Thread updateSeekBar;
     SongDetails songDetails;
     RoomViewModel viewModel;
@@ -110,14 +110,14 @@ public class PlayerActivity extends AppCompatActivity implements Playable {
         Intent intent = getIntent();
         Bundle bundle = intent.getExtras();
         songsList = Utility.getSongsList();
-        position = bundle.getInt("position");
+        recyclerViewPosition = bundle.getInt("position");
         isFavouriteMenuMode = bundle.getBoolean("isFavouriteMenu");
-        songDetails = Utility.songsList.get(position);
+        songDetails = Utility.songsList.get(recyclerViewPosition);
         displayIntoMediaPlayer(songDetails);
         playMedia(songDetails);
 
         //Create notification
-        CreateNotification.createNotification(PlayerActivity.this, songDetails, R.id.btn_pause, 1, songsList.size() - 1);
+        CreateNotification.createNotification(PlayerActivity.this, songDetails, isPlaying, 1, songsList.size() - 1);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             createChannel();
@@ -151,12 +151,16 @@ public class PlayerActivity extends AppCompatActivity implements Playable {
                 if (mediaPlayer.isPlaying()) {
                     pauseBtn.setImageResource(R.drawable.play_btn);
                     mediaPlayer.pause();
-                    onTrackPause();
+                    isPlaying = false;
+                    CreateNotification.createNotification(PlayerActivity.this, songDetails,
+                            isPlaying, recyclerViewPosition, songsList.size() - 1);
 
                 } else {
                     pauseBtn.setImageResource(R.drawable.pause_btn);
+                    isPlaying = true;
+                    CreateNotification.createNotification(PlayerActivity.this, songDetails,
+                            isPlaying, recyclerViewPosition, songsList.size() - 1);
                     mediaPlayer.start();
-                    onTrackPlay();
                 }
             }
         });
@@ -166,10 +170,13 @@ public class PlayerActivity extends AppCompatActivity implements Playable {
             public void onClick(View v) {
                 mediaPlayer.stop();
                 mediaPlayer.release();
-                position = (position + 1) % songsList.size();
-                songDetails = songsList.get(position);
+                recyclerViewPosition = (recyclerViewPosition + 1) % songsList.size();
+                songDetails = songsList.get(recyclerViewPosition);
+                pauseBtn.setImageResource(R.drawable.pause_btn);
                 displayIntoMediaPlayer(songDetails);
                 playMedia(songDetails);
+                CreateNotification.createNotification(PlayerActivity.this, songDetails,
+                        isPlaying, recyclerViewPosition, songsList.size() - 1);
             }
         });
 
@@ -178,12 +185,15 @@ public class PlayerActivity extends AppCompatActivity implements Playable {
             public void onClick(View v) {
                 mediaPlayer.stop();
                 mediaPlayer.release();
-                position = (position - 1) % songsList.size();
-                if (position < 0)
-                    position = songsList.size() - 1;
-                songDetails = songsList.get(position);
+                recyclerViewPosition = (recyclerViewPosition - 1) % songsList.size();
+                if (recyclerViewPosition < 0)
+                    recyclerViewPosition = songsList.size() - 1;
+                songDetails = songsList.get(recyclerViewPosition);
+                pauseBtn.setImageResource(R.drawable.pause_btn);
                 displayIntoMediaPlayer(songDetails);
                 playMedia(songDetails);
+                CreateNotification.createNotification(PlayerActivity.this, songDetails,
+                        isPlaying, recyclerViewPosition, songsList.size() - 1);
             }
         });
 
@@ -225,7 +235,7 @@ public class PlayerActivity extends AppCompatActivity implements Playable {
                 setToFavouriteBtn.setVisibility(View.GONE);
                 setToUnfavouriteBtn.setVisibility(View.VISIBLE);
                 songDetails.setIsFavourite(true);
-                Utility.songsList.get(position).setIsFavourite(true);
+                Utility.songsList.get(recyclerViewPosition).setIsFavourite(true);
                 //Code to insert
                 song = new SongEntity(songDetails);
                 viewModel = ViewModelProviders.of(PlayerActivity.this).get(RoomViewModel.class);
@@ -239,7 +249,7 @@ public class PlayerActivity extends AppCompatActivity implements Playable {
             public void onClick(View v) {
                 Toast.makeText(PlayerActivity.this, "Song removed from your favourites", Toast.LENGTH_SHORT).show();
                 songDetails.setIsFavourite(false);
-                Utility.songsList.get(position).setIsFavourite(true);
+                Utility.songsList.get(recyclerViewPosition).setIsFavourite(true);
                 viewModel = ViewModelProviders.of(PlayerActivity.this).get(RoomViewModel.class);
                 SongEntity song = new SongEntity(songDetails);
                 viewModel.deleteSong(song);
@@ -318,19 +328,24 @@ public class PlayerActivity extends AppCompatActivity implements Playable {
     }
 
     public void playMedia(SongDetails songDetails) {
+        Intent serviceIntent = new Intent(PlayerActivity.this, MyService.class);
 
         if (songDetails.playlistType == "Festival") {                     //type FESTIVAL
 
-            mediaPlayer = MediaPlayer.create(getApplicationContext(), festivalSongsList[songDetails.position]);
+            mediaPlayer = MediaPlayer.create(getApplicationContext(), festivalSongsList[songDetails.getPosition()]);
+            serviceIntent.putExtra("mediaPlayer", festivalSongsList[songDetails.position]);
             mediaPlayer.start();
 
         } else {            //type DOWNLOADS
 
             Uri uri = Uri.parse(songDetails.path);
             mediaPlayer = MediaPlayer.create(getApplicationContext(), uri);
+            serviceIntent.putExtra("mediaPlayer", songDetails.getPath());
+
             mediaPlayer.start();
 
         }
+        startService(serviceIntent);
         seekBar.setMax(mediaPlayer.getDuration());
         seekBar.setProgress(0);
         callResetSeekBar();
@@ -371,27 +386,25 @@ public class PlayerActivity extends AppCompatActivity implements Playable {
     }
 
 
-    //Below Four function are from Playable interface for Notifcations usage
+    //Below func are for Notifcations usage
 
-    BroadcastReceiver mBroadcastReceiver = new BroadcastReceiver() {
+    BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getExtras().getString("actionname");
 
             switch (action) {
                 case CreateNotification.ACTION_PREVIOUS:
-                    onTrackPrevious();
+                    Log.e("yups", "In playerActivity  ");
+                    prevBtn.performClick();
                     break;
 
                 case CreateNotification.ACTION_NEXT:
-                    onTrackNext();
+                    nextBtn.performClick();
                     break;
 
                 case CreateNotification.ACTION_PLAY:
-                    if (isPlaying)
-                        onTrackPause();
-                    else
-                        onTrackPlay();
+                    pauseBtn.performClick();
                     break;
             }
         }
@@ -403,39 +416,6 @@ public class PlayerActivity extends AppCompatActivity implements Playable {
         super.onStop();
     }
 
-    @Override
-    public void onTrackPrevious() {
-        position--;
-        CreateNotification.createNotification(PlayerActivity.this, songDetails,
-                R.drawable.ic_launcher_background, position, songsList.size() - 1);
-        sName = songDetails.songTitle;
-
-
-    }
-
-    @Override
-    public void onTrackPlay() {
-        CreateNotification.createNotification(PlayerActivity.this, songDetails,
-                R.drawable.ic_launcher_background, position, songsList.size() - 1);
-
-        sName = songDetails.songTitle;
-
-    }
-
-    @Override
-    public void onTrackPause() {
-
-    }
-
-    @Override
-    public void onTrackNext() {
-        //position++;
-        CreateNotification.createNotification(PlayerActivity.this, songDetails,
-                R.drawable.ic_launcher_background, position, songsList.size() - 1);
-        sName = songDetails.songTitle;
-        nextBtn.performClick();
-
-    }
 
     @Override
     protected void onDestroy() {
@@ -443,6 +423,7 @@ public class PlayerActivity extends AppCompatActivity implements Playable {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             notificationManager.cancelAll();
         }
-        //unregisterReceiver(broadcastReceiver);
+        unregisterReceiver(broadcastReceiver);
     }
+
 }
