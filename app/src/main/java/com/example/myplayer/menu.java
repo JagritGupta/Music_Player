@@ -62,11 +62,10 @@ public class menu extends AppCompatActivity {
                         favourites.setOnClickListener(new View.OnClickListener() {
                             @Override
                             public void onClick(View v) {
-                                Toast.makeText(menu.this,"This Option is currently unavailable!",Toast.LENGTH_SHORT).show();
 
-                               /* Intent i=new Intent(menu.this,MainActivity.class);
+                                Intent i=new Intent(menu.this,MainActivity.class);
                                 i.putExtra("type","Favourites");
-                                startActivity(i);*/
+                                startActivity(i);
 
                             }
                         });
