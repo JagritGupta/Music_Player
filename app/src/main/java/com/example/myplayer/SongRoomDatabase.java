@@ -6,7 +6,7 @@ import androidx.room.Database;
 import androidx.room.RoomDatabase;
 import androidx.room.Room;
 
-@Database(entities = {SongEntity.class}, version = 1)
+@Database(entities = {SongDetails.class}, version = 2)
 public abstract class SongRoomDatabase extends RoomDatabase {
     public abstract DAO dao();
 
@@ -16,12 +16,13 @@ public abstract class SongRoomDatabase extends RoomDatabase {
         if (roomDatabaseInstance == null) {
             synchronized (SongRoomDatabase.class) {
                 if (roomDatabaseInstance == null) {
-                    roomDatabaseInstance = Room.databaseBuilder(context.getApplicationContext(),
+                    roomDatabaseInstance = Room.databaseBuilder(context,
                             SongRoomDatabase.class, "songsList")
                             .build();
                 }
             }
         }
         return roomDatabaseInstance;
-    }
+        }
+
 }
