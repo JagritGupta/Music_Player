@@ -1,4 +1,4 @@
-package com.example.myplayer.Services;
+package com.example.myplayer.Notification;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;

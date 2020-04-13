@@ -2,14 +2,15 @@ package com.example.myplayer;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.lifecycle.ViewModelProviders;
 
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.PorterDuff;
@@ -17,6 +18,7 @@ import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
@@ -26,7 +28,7 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.myplayer.Services.OnClearFromRecentServiceSearch;
+import com.example.myplayer.Notification.OnClearFromRecentServiceSearch;
 
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
@@ -46,9 +48,12 @@ public class PlayerActivity extends AppCompatActivity{
     boolean isPlaying = true;
     Thread updateSeekBar;
     SongDetails songDetails;
-    RoomViewModel viewModel;
-    SongEntity song;
+    RoomService roomService;
+    ServiceConnection serviceConnection=null;
     private final int[] festivalSongsList = {R.raw.aa_aaye_navratre_ambe_maa, R.raw.jai_jaikaar_sukhwinder_singh, R.raw.lali_lali_laal_chunariya, R.raw.navraton_mein_ghar_mere_aayi};
+    boolean isServiceBound=false ;
+    MyService myService;
+    Intent serviceIntent;
     //Hash map
     //room-->id,name(hash map)
 
@@ -82,6 +87,7 @@ public class PlayerActivity extends AppCompatActivity{
         getSupportActionBar().setTitle("Now Playing");
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setDisplayShowHomeEnabled(true);
+        roomService=new RoomService(getApplication());
 
         updateSeekBar = new Thread() {
             @Override
@@ -93,7 +99,7 @@ public class PlayerActivity extends AppCompatActivity{
                 while (currentPosition < totalDuration) {
                     try {
                         sleep(500);
-                        currentPosition = mediaPlayer.getCurrentPosition();
+                        currentPosition = myService.getCurrentPlayerPosition();
                         seekBar.setProgress(currentPosition);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
@@ -237,9 +243,7 @@ public class PlayerActivity extends AppCompatActivity{
                 songDetails.setIsFavourite(true);
                 Utility.songsList.get(recyclerViewPosition).setIsFavourite(true);
                 //Code to insert
-                song = new SongEntity(songDetails);
-                viewModel = ViewModelProviders.of(PlayerActivity.this).get(RoomViewModel.class);
-                viewModel.insert(song);
+                roomService.insert(songDetails);
 
             }
         });
@@ -250,13 +254,41 @@ public class PlayerActivity extends AppCompatActivity{
                 Toast.makeText(PlayerActivity.this, "Song removed from your favourites", Toast.LENGTH_SHORT).show();
                 songDetails.setIsFavourite(false);
                 Utility.songsList.get(recyclerViewPosition).setIsFavourite(true);
-                viewModel = ViewModelProviders.of(PlayerActivity.this).get(RoomViewModel.class);
-                SongEntity song = new SongEntity(songDetails);
-                viewModel.deleteSong(song);
+                roomService.deleteSong(songDetails);
                 setToFavouriteBtn.setVisibility(View.VISIBLE);
                 setToUnfavouriteBtn.setVisibility(View.GONE);
             }
         });
+    }
+
+    public boolean bindMyService(){
+        serviceConnection=new ServiceConnection() {
+            @Override
+            public void onServiceConnected(ComponentName name, IBinder iBinder) {
+                isServiceBound = true;
+                MyService.MyServiceBinder myServiceBinder = (MyService.MyServiceBinder) iBinder;
+                myService = myServiceBinder.getService();
+                Toast.makeText(PlayerActivity.this, "FINALLLYYYYYYYY", Toast.LENGTH_SHORT).show();
+                seekBar.setMax(myService.getTotalDuration());
+                setEndTimer(myService.getTotalDuration());
+                updateSeekBar.start();
+            }
+
+            @Override
+            public void onServiceDisconnected(ComponentName name) {
+                isServiceBound = false;
+                myService = null;
+            }
+        };
+        bindService(serviceIntent ,serviceConnection,BIND_AUTO_CREATE);
+        return isServiceBound;
+    }
+
+    public void unBindService(){
+        if(isServiceBound){
+            unbindService(serviceConnection);
+            isServiceBound=false;
+        }
     }
 
 
@@ -287,8 +319,6 @@ public class PlayerActivity extends AppCompatActivity{
         if (isFavouriteMenuMode == true && !songDetails.isFavourite()) {
             songsList.remove(songDetails);
             Utility.setSongsList(songsList);
-            //MusicLibraryAdapter musicLibraryAdapter=new MusicLibraryAdapter(PlayerActivity.this,songsList,"");
-            //musicLibraryAdapter.updateList(songsList);
         }
     }
 
@@ -328,9 +358,16 @@ public class PlayerActivity extends AppCompatActivity{
     }
 
     public void playMedia(SongDetails songDetails) {
-        Intent serviceIntent = new Intent(PlayerActivity.this, MyService.class);
-
-        if (songDetails.playlistType == "Festival") {                     //type FESTIVAL
+        serviceIntent = new Intent(getApplicationContext(), MyService.class);
+        serviceIntent.putExtra("SongPos",recyclerViewPosition);
+        startService(serviceIntent);
+        isServiceBound=bindMyService();
+        if(isServiceBound){    //Not working, value is False
+            Toast.makeText(PlayerActivity.this, "FINALLLYYYYYYYY", Toast.LENGTH_SHORT).show();
+            seekBar.setMax(myService.getTotalDuration());
+            setEndTimer(myService.getTotalDuration());
+        }
+        /*if (songDetails.playlistType == "Festival") {                     //type FESTIVAL
 
             mediaPlayer = MediaPlayer.create(getApplicationContext(), festivalSongsList[songDetails.getPosition()]);
             serviceIntent.putExtra("mediaPlayer", festivalSongsList[songDetails.position]);
@@ -338,19 +375,18 @@ public class PlayerActivity extends AppCompatActivity{
 
         } else {            //type DOWNLOADS
 
-            Uri uri = Uri.parse(songDetails.path);
+            Uri uri = Uri.parse(songDetails.getPath());
             mediaPlayer = MediaPlayer.create(getApplicationContext(), uri);
             serviceIntent.putExtra("mediaPlayer", songDetails.getPath());
 
             mediaPlayer.start();
 
-        }
-        startService(serviceIntent);
-        seekBar.setMax(mediaPlayer.getDuration());
+        }*/
+        Uri uri = Uri.parse(songDetails.getPath());
+        mediaPlayer = MediaPlayer.create(getApplicationContext(), uri);
         seekBar.setProgress(0);
-        callResetSeekBar();
-        setEndTimer(mediaPlayer.getDuration());
-        updateSeekBar.start();
+        //callResetSeekBar();
+        //updateSeekBar.start();
         seekBar.getProgressDrawable().setColorFilter(getResources().getColor(R.color.colorPrimary), PorterDuff.Mode.MULTIPLY);
         seekBar.getThumb().setColorFilter(getResources().getColor(R.color.colorPrimaryDark), PorterDuff.Mode.SRC_IN);
         if (currentPosition == totalDuration) {

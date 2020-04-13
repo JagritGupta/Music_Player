@@ -3,23 +3,17 @@ package com.example.myplayer;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.Observer;
-import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProviders;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.content.Intent;
-import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Color;
-import android.icu.util.UniversalTimeScale;
 import android.media.MediaMetadataRetriever;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
-import android.provider.MediaStore;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -35,9 +29,9 @@ import java.io.File;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 
 import static java.util.Collections.sort;
 
@@ -53,7 +47,7 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
     public static TextView miniSongTitle, miniSongDesc;
     public static ImageView miniPlayPauseBtn, miniSongImg;
     static int pos = 0;
-    RoomViewModel viewModel;
+    RoomService roomService;
 
     private final int[] festivalSongsList = {R.raw.aa_aaye_navratre_ambe_maa, R.raw.jai_jaikaar_sukhwinder_singh, R.raw.lali_lali_laal_chunariya, R.raw.navraton_mein_ghar_mere_aayi};
 
@@ -84,6 +78,7 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
         Utility.setSongsList(songsList);
         musicLibraryAdapter = new MusicLibraryAdapter(this, songsList, typeOfPlaylist);
         recyclerView.setAdapter(musicLibraryAdapter);
+        //roomService = new RoomService(getApplication());
 
         miniSongInfoLayout.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -114,6 +109,7 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
         switch (menuType) {
             case "Festival Songs":
                 Toast.makeText(MainActivity.this, "FESTIVAL SONGS", Toast.LENGTH_SHORT).show();
+
                 fetchFestivalSongs();
 
                 if (songsList.size() == 0) {
@@ -125,9 +121,10 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
             case "Favourites":
                 Toast.makeText(MainActivity.this, "Your favourites", Toast.LENGTH_SHORT).show();
                 songFavMap = new HashMap<String, String>();
-                new ItemTouchHelper(itemTouchHelperCallback).attachToRecyclerView(recyclerView);
-                fetchFavouriteSongs();
+                new ItemTouchHelper(itemTouchHelperCallback).attachToRecyclerView(recyclerView);   //Enables swipe to delete feature
+                songsList = fetchFavouriteSongs();
                 typeOfPlaylist = "Favourites";
+
                 return songsList;
 
             case "Downloads":
@@ -135,6 +132,7 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
                 pos = 0;
                 songFavMap = new HashMap<>();
                 //fetchFavouriteSongs();
+                songsList = new ArrayList<>();
                 fetchDownloadSongs((Environment.getExternalStorageDirectory()));
 
                 if (songsList.size() == 0) {
@@ -183,32 +181,11 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
         }
     }
 
-    public void fetchFavouriteSongs() {
-        viewModel = ViewModelProviders.of(MainActivity.this).get(RoomViewModel.class);
-        viewModel.fetchAllFavSongs().observe(MainActivity.this, new Observer<List<SongEntity>>() {
-            @Override
-            public void onChanged(List<SongEntity> songEntities) {
-                if (songEntities.size() == 0) {
-                    noSongsFound.setVisibility(View.VISIBLE);
-                } else {
-                    for (int i = 0; i < songEntities.size(); i++) {
-                        SongDetails singleSong = new SongDetails();
-                        singleSong.setSongTitle(songEntities.get(i).getSongTitle());
-                        singleSong.setSongDesc(songEntities.get(i).getSongDesc());
-                        singleSong.setPlaylistType(songEntities.get(i).getPlaylistType());
-                        singleSong.setSongAlbumArt(songEntities.get(i).getSongAlbumArt());
-                        singleSong.setPosition(songEntities.get(i).getPosition());
-                        singleSong.setPath(songEntities.get(i).getSongPath());
-                        singleSong.setIsFavourite(songEntities.get(i).isFavourite());
-                        singleSong.setSongID(songEntities.get(i).getSongID());
-                        songsList.add(singleSong);
-                        String songID = songEntities.get(i).getSongID();
-                        songFavMap.put(songID, "singleSong");
+    public ArrayList<SongDetails> fetchFavouriteSongs() {
+        roomService = new RoomService(getApplication());
+        List<SongDetails> songsList = roomService.fetchAllFavSongs();
 
-                    }
-                }
-            }
-        });
+        return (ArrayList) songsList;
     }
 
     public void fetchDownloadSongs(File file) {
@@ -304,10 +281,9 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
 
         @Override
         public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
-            viewModel = ViewModelProviders.of(MainActivity.this).get(RoomViewModel.class);
-            SongEntity song = new SongEntity(songsList.get(viewHolder.getAdapterPosition()));
-            viewModel.deleteSong(song);
-            songsList.remove(viewHolder.getAdapterPosition());
+            SongDetails songDetails=songsList.get(viewHolder.getAdapterPosition());
+            roomService.deleteSong(songDetails);
+            songsList.remove(songDetails);
             Utility.setSongsList(songsList);
             musicLibraryAdapter.notifyDataSetChanged();
         }

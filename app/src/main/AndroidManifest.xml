@@ -23,13 +23,13 @@
         <activity android:name=".PlayerActivity" />
         <activity android:name=".MainActivity" />
 
-        <receiver android:name=".Services.NotificationActionService" />
+        <receiver android:name=".Notification.NotificationActionService" />
 
-       <!-- <service
+       <service
             android:name = ".MyService"
-            android:enabled = "true" />-->
+            android:enabled = "true" />
 
-        <service android:name=".Services.OnClearFromRecentServiceSearch" />
+        <service android:name=".Notification.OnClearFromRecentServiceSearch" />
     </application>
 
 </manifest>
