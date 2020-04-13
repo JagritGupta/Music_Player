@@ -6,19 +6,20 @@ import androidx.room.Delete;
 import androidx.room.Insert;
 import androidx.room.Query;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Dao
 public interface DAO {
 
     @Insert
-    void insert(SongEntity songEntity);
+    void insert(SongDetails songDetails);
 
     @Query("SELECT * FROM songsList")
-    LiveData<List<SongEntity>> getAllFavSongs();
+    List<SongDetails> getAllFavSongs();
 
     @Delete
-    int deleteSong(SongEntity songEntity);
+    int deleteSong(SongDetails songDetails);
 
 
 }

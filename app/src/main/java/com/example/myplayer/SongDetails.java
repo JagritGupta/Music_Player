@@ -1,20 +1,40 @@
-package com.example.myplayer;//Singleton Class
+package com.example.myplayer;
 
-import android.os.Parcel;
-import android.os.Parcelable;
+import androidx.annotation.NonNull;
+import androidx.room.ColumnInfo;
+import androidx.room.Entity;
+import androidx.room.PrimaryKey;
 
+@Entity(tableName = "songsList")
+public class SongDetails {
 
-public class SongDetails implements Parcelable {
-
-    String songTitle;
-    String songDesc;
-    byte[] songAlbumArt;
-    int position = -1;    //position variable is used for playing Festival songs
+    @PrimaryKey
+    @NonNull
     String songID;
-    String path = null;   //path variable is used for playing Download songs
-    String playlistType;
-    boolean isFavourite;
 
+    @NonNull
+    @ColumnInfo(name = "songName")
+    String songTitle;
+
+    @NonNull
+    @ColumnInfo(name = "songDesc")
+    String songDesc;
+
+    @NonNull
+    @ColumnInfo(name = "songAlbumArt")
+    byte[] songAlbumArt;
+
+    @NonNull
+    @ColumnInfo(name = "playlistType")
+    String playlistType;
+
+    @NonNull
+    @ColumnInfo(name = "position")
+    int position = -1;    //position variable is used for playing Festival songs
+
+    String songPath;      //songPath variable is used for playing Download songs
+
+    boolean isFavourite;
 
     public SongDetails(String songTitle, String songDesc, byte[] songAlbumArt) {
         this.songTitle = songTitle;
@@ -31,37 +51,6 @@ public class SongDetails implements Parcelable {
     public SongDetails() {
     }
 
-    protected SongDetails(Parcel in) {
-        songTitle = in.readString();
-        songDesc = in.readString();
-        position = in.readInt();
-        songID = in.readString();
-    }
-
-    @Override
-    public void writeToParcel(Parcel dest, int flags) {
-        dest.writeString(songTitle);
-        dest.writeString(songDesc);
-        dest.writeInt(position);
-        dest.writeString(songID);
-    }
-
-    public static final Creator<SongDetails> CREATOR = new Creator<SongDetails>() {
-        @Override
-        public SongDetails createFromParcel(Parcel in) {
-            return new SongDetails(in);
-        }
-
-        @Override
-        public SongDetails[] newArray(int size) {
-            return new SongDetails[size];
-        }
-    };
-
-    @Override
-    public int describeContents() {
-        return 0;
-    }
 
     public String getSongTitle() {
         return songTitle;
@@ -83,20 +72,20 @@ public class SongDetails implements Parcelable {
         return songID;
     }
 
-    public String getPath() {
-        return path;
-    }
-
     public String getPlaylistType() {
         return playlistType;
     }
 
-    public static Creator<SongDetails> getCREATOR() {
-        return CREATOR;
-    }
-
     public boolean isFavourite() {
         return isFavourite;
+    }
+
+    public String getPath() {
+        return songPath;
+    }
+
+    public void setPath(String songPath) {
+        this.songPath = songPath;
     }
 
     public void setIsFavourite(boolean favourite) {
@@ -123,9 +112,6 @@ public class SongDetails implements Parcelable {
         this.songID = songID;
     }
 
-    public void setPath(String path) {
-        this.path = path;
-    }
 
     public void setPlaylistType(String playlistType) {
         this.playlistType = playlistType;
