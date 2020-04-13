@@ -80,8 +80,8 @@ public class MusicLibraryAdapter extends RecyclerView.Adapter<MusicLibraryAdapte
         } else {
             holder.songTitle.setText(songDetails.getSongTitle());
             holder.songDesc.setText(songDetails.getSongDesc());
-            Bitmap bm = BitmapFactory.decodeByteArray(songDetails.songAlbumArt, 0, songDetails.songAlbumArt.length);
-            holder.songImage.setImageBitmap(bm);
+            //Bitmap bm = BitmapFactory.decodeByteArray(songDetails.songAlbumArt, 0, songDetails.songAlbumArt.length);
+            //holder.songImage.setImageBitmap(bm);
         }
 
         if (songDetails.isFavourite()) {

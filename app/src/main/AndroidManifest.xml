@@ -12,7 +12,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity android:name=".MediaPlayer_mini"></activity>
-        <activity android:name=".menu" />
+        <activity android:name=".MainMenu" />
         <activity android:name=".splashScreenActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

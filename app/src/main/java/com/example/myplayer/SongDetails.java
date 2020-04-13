@@ -5,33 +5,29 @@ import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
-@Entity(tableName = "songsList")
+@Entity(tableName = "songsDB")
 public class SongDetails {
 
-    @PrimaryKey
-    @NonNull
     String songID;
 
-    @NonNull
     @ColumnInfo(name = "songName")
     String songTitle;
 
-    @NonNull
     @ColumnInfo(name = "songDesc")
     String songDesc;
 
-    @NonNull
     @ColumnInfo(name = "songAlbumArt")
     byte[] songAlbumArt;
 
-    @NonNull
     @ColumnInfo(name = "playlistType")
     String playlistType;
 
-    @NonNull
+
     @ColumnInfo(name = "position")
     int position = -1;    //position variable is used for playing Festival songs
 
+    @PrimaryKey
+    @NonNull
     String songPath;      //songPath variable is used for playing Download songs
 
     boolean isFavourite;

@@ -18,10 +18,10 @@ public class splashScreenActivity extends AppCompatActivity {
             // Using handler with postDelayed called runnable run method
             @Override
             public void run() {
-                Intent i = new Intent(splashScreenActivity.this, menu.class);
+                Intent i = new Intent(splashScreenActivity.this, MainMenu.class);
                 startActivity(i);
                 finish();
             }
-        }, 2*1000);
+        }, 4*1000);
     }
 }

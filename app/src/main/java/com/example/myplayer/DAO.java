@@ -15,8 +15,17 @@ public interface DAO {
     @Insert
     void insert(SongDetails songDetails);
 
-    @Query("SELECT * FROM songsList")
+    @Query("SELECT * FROM songsDB where isFavourite = 'True' ")
     List<SongDetails> getAllFavSongs();
+
+    @Query("SELECT * FROM songsDB where playlistType='Downloads' ")
+    List<SongDetails> getAllDownloads();
+
+    @Query("SELECT * FROM songsDB where playlistType='Festival' ")
+    List<SongDetails> getAllFestival();
+
+    @Query("SELECT * FROM songsDB")
+    List<SongDetails> getAllSongs();
 
     @Delete
     int deleteSong(SongDetails songDetails);

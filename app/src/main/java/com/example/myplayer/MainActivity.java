@@ -2,8 +2,6 @@ package com.example.myplayer;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.lifecycle.Observer;
-import androidx.lifecycle.ViewModelProviders;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -11,10 +9,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.media.MediaMetadataRetriever;
 import android.os.Bundle;
 import android.os.Environment;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -26,12 +22,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.File;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.ExecutionException;
 
 import static java.util.Collections.sort;
 
@@ -78,7 +71,7 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
         Utility.setSongsList(songsList);
         musicLibraryAdapter = new MusicLibraryAdapter(this, songsList, typeOfPlaylist);
         recyclerView.setAdapter(musicLibraryAdapter);
-        //roomService = new RoomService(getApplication());
+        roomService=new RoomService(getApplication());
 
         miniSongInfoLayout.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -108,9 +101,11 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
     public ArrayList<SongDetails> displaySongsInArrayList(String menuType) {
         switch (menuType) {
             case "Festival Songs":
+
+
                 Toast.makeText(MainActivity.this, "FESTIVAL SONGS", Toast.LENGTH_SHORT).show();
 
-                fetchFestivalSongs();
+                songsList=fetchFestivalFromDB();
 
                 if (songsList.size() == 0) {
                     recyclerView.setVisibility(View.GONE);
@@ -122,9 +117,14 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
                 Toast.makeText(MainActivity.this, "Your favourites", Toast.LENGTH_SHORT).show();
                 songFavMap = new HashMap<String, String>();
                 new ItemTouchHelper(itemTouchHelperCallback).attachToRecyclerView(recyclerView);   //Enables swipe to delete feature
-                songsList = fetchFavouriteSongs();
+                songsList = fetchFavouritesFromDB();
                 typeOfPlaylist = "Favourites";
 
+
+                if (songsList.size() == 0) {
+                    recyclerView.setVisibility(View.GONE);
+                    noSongsFound.setVisibility(View.VISIBLE);
+                }
                 return songsList;
 
             case "Downloads":
@@ -133,7 +133,7 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
                 songFavMap = new HashMap<>();
                 //fetchFavouriteSongs();
                 songsList = new ArrayList<>();
-                fetchDownloadSongs((Environment.getExternalStorageDirectory()));
+                songsList=fetchDownloadFromDB();
 
                 if (songsList.size() == 0) {
                     recyclerView.setVisibility(View.GONE);
@@ -144,9 +144,7 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
             case "AllSongs":
                 Toast.makeText(MainActivity.this, "ALL SONGS", Toast.LENGTH_SHORT).show();
 
-                fetchDownloadSongs((Environment.getExternalStorageDirectory()));
-
-                fetchFestivalSongs();
+                songsList=fetchAllSongsFromDB();
 
                 typeOfPlaylist = "All Songs";
                 if (songsList.size() == 0) {
@@ -161,68 +159,32 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
     }
 
 
-    public void fetchFestivalSongs() {
-        typeOfPlaylist = "Festival";
-        Field[] fields = R.raw.class.getFields();
-
-        for (int i = 0; i < fields.length; i++) {
-            String songName = fields[i].getName().replace("_", " ");
-            SongDetails singleSong = new SongDetails(songName, artistName);
-            singleSong.setPlaylistType(typeOfPlaylist);
-            String songID = "Fest" + UUID.randomUUID().toString();
-            singleSong.setSongID(songID);
-            singleSong.setPosition(i);
-            songsList.add(singleSong);
-        }
-
-        if (fields.length == 0) {
-            recyclerView.setVisibility(View.GONE);
-            noSongsFound.setVisibility(View.VISIBLE);
-        }
-    }
-
-    public ArrayList<SongDetails> fetchFavouriteSongs() {
+    public ArrayList<SongDetails> fetchFestivalFromDB() {
         roomService = new RoomService(getApplication());
-        List<SongDetails> songsList = roomService.fetchAllFavSongs();
+        List<SongDetails> songsList = roomService.fetchFestivals();
 
         return (ArrayList) songsList;
     }
 
-    public void fetchDownloadSongs(File file) {
-        File[] files = file.listFiles();
-        if (files != null) {
-            for (File singleFile : files) {
-                if (singleFile.isDirectory() && !singleFile.isHidden()) {
-                    fetchDownloadSongs(singleFile);
-                } else {
-                    try {
-                        if (singleFile.getName().endsWith(".mp3") || singleFile.getName().endsWith(".wav") || singleFile.getName().endsWith(".m4a")) {
+    public ArrayList<SongDetails> fetchFavouritesFromDB() {
+        roomService = new RoomService(getApplication());
+        List<SongDetails> songsList = roomService.fetchFavourites();
+        roomService=new RoomService(getApplication());
+        return (ArrayList) songsList;
+    }
 
-                            String path = singleFile.getPath();
-                            MediaMetadataRetriever metaRetriver = new MediaMetadataRetriever();
-                            metaRetriver.setDataSource(path);
-                            String albumName = metaRetriver.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM);
-                            String artistName = metaRetriver.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST);
-                            byte[] albumArt = metaRetriver.getEmbeddedPicture();
-                            SongDetails singleSong = new SongDetails(albumName, artistName, albumArt);
-                            singleSong.setPath(path);
-                            singleSong.setPlaylistType("Downloads");
-                            String songID = "Down" + pos;
-                            pos += 1;
-                            if (songFavMap != null && songFavMap.containsKey(songID)) {
-                                Toast.makeText(MainActivity.this, "YESSSSSSSSSSSSSSSSS", Toast.LENGTH_LONG).show();
-                            } else {
-                                Toast.makeText(MainActivity.this, "NOOOOO", Toast.LENGTH_SHORT).show();
-                            }
-                            singleSong.setSongID(songID);
-                            songsList.add(singleSong);
-                        }
-                    } catch (Exception e) {
-                        Log.d("Offoo", "Error");
-                    }
-                }
-            }
-        }
+    public ArrayList<SongDetails> fetchDownloadFromDB() {
+        roomService = new RoomService(getApplication());
+        List<SongDetails> songsList = roomService.fetchDownloads();
+
+        return (ArrayList) songsList;
+    }
+
+    public ArrayList<SongDetails> fetchAllSongsFromDB() {
+        roomService = new RoomService(getApplication());
+        List<SongDetails> songsList = roomService.fetchAllSongs();
+
+        return (ArrayList) songsList;
     }
 
 

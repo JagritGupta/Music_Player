@@ -1,15 +1,9 @@
 package com.example.myplayer;
 
 import android.app.Application;
-import android.content.Context;
 import android.os.AsyncTask;
 
-import androidx.annotation.NonNull;
-import androidx.lifecycle.AndroidViewModel;
-import androidx.room.Room;
 
-
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -29,9 +23,9 @@ public class RoomService {
         new DeleteAsyncTask().execute(songDetails);
     }
 
-    public List<SongDetails> fetchAllFavSongs() {
+    public List<SongDetails> fetchFestivals() {
         try {
-            return new DisplayAsyncTask().execute().get();
+            return new DisplayFestivalAsyncTask().execute().get();
         } catch (ExecutionException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
@@ -41,6 +35,39 @@ public class RoomService {
     }
 
 
+    public List<SongDetails> fetchFavourites() {
+        try {
+            return new DisplayFavouriteAsyncTask().execute().get();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public List<SongDetails> fetchDownloads() {
+        try {
+            return new DisplayDownloadAsyncTask().execute().get();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+
+    public List<SongDetails> fetchAllSongs() {
+        try {
+            return new DisplayAllSongsAsyncTask().execute().get();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 
     private class InsertAsyncTask extends AsyncTask<SongDetails, Void, Void> {
         public InsertAsyncTask() {
@@ -53,10 +80,31 @@ public class RoomService {
         }
     }
 
-    private class DisplayAsyncTask extends AsyncTask<Void, Void, List<SongDetails>> {
+    private class DisplayFestivalAsyncTask extends AsyncTask<Void, Void, List<SongDetails>> {
+        @Override
+        protected List<SongDetails> doInBackground(Void... voids) {
+            return roomDB.dao().getAllFestival();
+        }
+    }
+
+    private class DisplayFavouriteAsyncTask extends AsyncTask<Void, Void, List<SongDetails>> {
         @Override
         protected List<SongDetails> doInBackground(Void... voids) {
             return roomDB.dao().getAllFavSongs();
+        }
+    }
+
+    private class DisplayDownloadAsyncTask extends AsyncTask<Void, Void, List<SongDetails>> {
+        @Override
+        protected List<SongDetails> doInBackground(Void... voids) {
+            return roomDB.dao().getAllDownloads();
+        }
+    }
+
+    private class DisplayAllSongsAsyncTask extends AsyncTask<Void, Void, List<SongDetails>> {
+        @Override
+        protected List<SongDetails> doInBackground(Void... voids) {
+            return roomDB.dao().getAllSongs();
         }
     }
 
