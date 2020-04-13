@@ -14,7 +14,7 @@ import android.widget.Toast;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
-import com.example.myplayer.Services.NotificationActionService;
+import com.example.myplayer.Notification.NotificationActionService;
 
 public class CreateNotification {
     public static final String CHANNEL_ID = "channel1";
