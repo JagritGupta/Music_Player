@@ -6,7 +6,7 @@ import androidx.room.Database;
 import androidx.room.RoomDatabase;
 import androidx.room.Room;
 
-@Database(entities = {SongDetails.class}, version = 3)
+@Database(entities = {SongDetails.class}, version = 4)
 public abstract class SongRoomDatabase extends RoomDatabase {
     public abstract DAO dao();
 

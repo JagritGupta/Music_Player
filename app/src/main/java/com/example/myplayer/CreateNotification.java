@@ -24,7 +24,7 @@ public class CreateNotification {
     public static Notification notification;
 
     public static void createNotification(Context context, SongDetails songDetails, boolean isPlaying, int pos, int size) {
-        Bitmap bm;
+        Bitmap bm=null;
         Log.e("yups","In CreateNotification");
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -34,9 +34,9 @@ public class CreateNotification {
             MediaSessionCompat mediaSessionCompat = new MediaSessionCompat(context, "tag");
 
 
-            if (songDetails.playlistType == "Festival") {
+            if (songDetails.playlistType.equalsIgnoreCase("Festival")) {
                 bm = BitmapFactory.decodeResource(context.getResources(), R.drawable.music_player);
-            } else {
+            } else if(songDetails.playlistType.equalsIgnoreCase("Downloads")) {
                 bm = BitmapFactory.decodeByteArray(songDetails.songAlbumArt, 0, songDetails.songAlbumArt.length);
             }
 
@@ -90,5 +90,4 @@ public class CreateNotification {
             notificationManagerCompat.notify(1, notification);
         }
     }
-
 }

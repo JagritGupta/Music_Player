@@ -11,6 +11,5 @@ public class NotificationActionService extends BroadcastReceiver {
         context.sendBroadcast(new Intent("SONGS_LIST")
         .putExtra("actionname",intent.getAction()));
         Log.e("yups","In NotificationActionService  ");
-
     }
 }

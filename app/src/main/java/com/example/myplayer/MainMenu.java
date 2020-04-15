@@ -38,63 +38,10 @@ public class MainMenu extends AppCompatActivity {
         favourites = findViewById(R.id.favourites);
         downloads = findViewById(R.id.downloads);
         allSongs = findViewById(R.id.allSongs);
-        fetchFestivalSongs();
-        fetchDownloadSongs(Environment.getExternalStorageDirectory());
 
     }
 
-    public void fetchFestivalSongs() {
-        Field[] fields = R.raw.class.getFields();
 
-        for (int i = 0; i < fields.length; i++) {
-            String songName = fields[i].getName().replace("_", " ");
-            SongDetails singleSong = new SongDetails(songName, "ArtistName");
-            singleSong.setPlaylistType("Festival");
-            singleSong.setPosition(i);
-            singleSong.setPath(Integer.toString(festivalSongsList[i]));
-            insertIntoDB(singleSong);
-        }
-    }
-
-    public void fetchFavouriteSongs() {
-
-    }
-
-    public void fetchDownloadSongs(File file) {
-        File[] files = file.listFiles();
-        if (files != null) {
-            for (File singleFile : files) {
-                if (singleFile.isDirectory() && !singleFile.isHidden()) {
-                    fetchDownloadSongs(singleFile);
-                } else {
-                    try {
-                        if (singleFile.getName().endsWith(".mp3") || singleFile.getName().endsWith(".wav") || singleFile.getName().endsWith(".m4a")) {
-
-                            String path = singleFile.getPath();
-                            MediaMetadataRetriever metaRetriver = new MediaMetadataRetriever();
-                            metaRetriver.setDataSource(path);
-                            String albumName = metaRetriver.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM);
-                            String artistName = metaRetriver.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST);
-                            byte[] albumArt = metaRetriver.getEmbeddedPicture();
-                            SongDetails singleSong = new SongDetails(albumName, artistName, albumArt);
-                            singleSong.setPath(path);
-                            singleSong.setIsFavourite(true);
-                            singleSong.setPlaylistType("Downloads");
-                            insertIntoDB(singleSong);
-                        }
-                    } catch (Exception e) {
-                        Log.d("Offoo", "Error");
-                    }
-                }
-            }
-        }
-    }
-
-    public void insertIntoDB(SongDetails songDetails) {
-        roomService = new RoomService(getApplication());
-        roomService.insert(songDetails);
-
-    }
 
 
     @Override
@@ -110,7 +57,9 @@ public class MainMenu extends AppCompatActivity {
                 .withListener(new PermissionListener() {
                     @Override
                     public void onPermissionGranted(PermissionGrantedResponse response) {
-                        //albumList=displaySongsInArrayList(menuType);
+                        fetchDownloadSongs(Environment.getExternalStorageDirectory());
+                        fetchFestivalSongs();
+
                         festivalSongs.setOnClickListener(new View.OnClickListener() {
                             @Override
                             public void onClick(View v) {
@@ -169,4 +118,58 @@ public class MainMenu extends AppCompatActivity {
                 }).check();
     }
 
+    public void fetchFestivalSongs() {
+        Field[] fields = R.raw.class.getFields();
+        for (int i = 0; i < fields.length; i++) {
+            String songName = fields[i].getName().replace("_", " ");
+            SongDetails singleSong = new SongDetails(songName, "ArtistName");
+            singleSong.setPlaylistType("Festival");
+            singleSong.setPosition(i);
+            singleSong.setPath(Integer.toString(festivalSongsList[i]));
+
+            insertIntoDB(singleSong);
+        }
+    }
+
+    public void fetchFavouriteSongs() {
+
+    }
+
+    public void fetchDownloadSongs(File file) {
+
+        File[] files = file.listFiles();
+        if (files != null) {
+            for (File singleFile : files) {
+                if (singleFile.isDirectory() && !singleFile.isHidden()) {
+                    fetchDownloadSongs(singleFile);
+                } else {
+                    try {
+                        if (singleFile.getName().endsWith(".mp3") || singleFile.getName().endsWith(".wav") || singleFile.getName().endsWith(".m4a")) {
+
+                            String path = singleFile.getPath();
+                            MediaMetadataRetriever metaRetriver = new MediaMetadataRetriever();
+                            metaRetriver.setDataSource(path);
+                            String albumName = metaRetriver.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM);
+                            String artistName = metaRetriver.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST);
+                            byte[] albumArt = metaRetriver.getEmbeddedPicture();
+                            SongDetails singleSong = new SongDetails(albumName, artistName, albumArt);
+                            singleSong.setPath(path);
+                            singleSong.setIsFavourite(true);
+                            singleSong.setPlaylistType("Downloads");
+                            insertIntoDB(singleSong);
+                        }
+                    } catch (Exception e) {
+                        Log.d("Offoo", "Error");
+                    }
+                }
+            }
+        }
+    }
+
+    public void insertIntoDB(SongDetails songDetails) {
+        roomService=new RoomService(getApplication());
+
+        roomService.insert(songDetails);
+
+    }
 }

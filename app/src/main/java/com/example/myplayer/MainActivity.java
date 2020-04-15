@@ -9,8 +9,10 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.media.MediaMetadataRetriever;
 import android.os.Bundle;
 import android.os.Environment;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -22,6 +24,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.File;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -41,7 +44,8 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
     public static ImageView miniPlayPauseBtn, miniSongImg;
     static int pos = 0;
     RoomService roomService;
-
+    MyService myService;
+    public static boolean isMainActivityVisible=false;
     private final int[] festivalSongsList = {R.raw.aa_aaye_navratre_ambe_maa, R.raw.jai_jaikaar_sukhwinder_singh, R.raw.lali_lali_laal_chunariya, R.raw.navraton_mein_ghar_mere_aayi};
 
     SongDetails songDetails;
@@ -52,7 +56,9 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        isMainActivityVisible=true;
+        //fetchFestivalSongs();
+        //fetchDownloadSongs(Environment.getExternalStorageDirectory());
         songsList = new ArrayList<>();
         recyclerView = findViewById(R.id.recycler_view);
         noSongsFound = findViewById(R.id.noDataFound);
@@ -71,38 +77,48 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
         Utility.setSongsList(songsList);
         musicLibraryAdapter = new MusicLibraryAdapter(this, songsList, typeOfPlaylist);
         recyclerView.setAdapter(musicLibraryAdapter);
-        roomService=new RoomService(getApplication());
-
         miniSongInfoLayout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
+                Intent i=new Intent(MainActivity.this,PlayerActivity.class);
+                i.putExtra("position",songDetails.getPosition());
+                i.putExtra("isFavouriteMenu",false);
+                startActivity(i);
             }
         });
     }
 
 
-    public static void miniPlayerAccess(Boolean isVisible, SongDetails songDetails) {
+    public static void miniPlayerAccess(SongDetails songDetails,Boolean isVisible) {
+        if(songDetails!=null){
+            isVisible=true;
+        }
         if (isVisible) {
             miniPlayerLayout.setVisibility(View.VISIBLE);
             miniSongTitle.setText(songDetails.songTitle);
             miniSongDesc.setText(songDetails.songDesc);
 
-            if (songDetails.playlistType == "Festival") {
+            if (songDetails.playlistType.equalsIgnoreCase("Festival")) {
                 miniSongImg.setImageResource(R.drawable.music_player);
-            } else {
+            }
+            else {
                 Bitmap bm = BitmapFactory.decodeByteArray(songDetails.songAlbumArt, 0, songDetails.songAlbumArt.length);
                 miniSongImg.setImageBitmap(bm);
             }
         }
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        isMainActivityVisible=true;
+    }
 
     public ArrayList<SongDetails> displaySongsInArrayList(String menuType) {
+
+        roomService=new RoomService(getApplication());
         switch (menuType) {
             case "Festival Songs":
-
-
                 Toast.makeText(MainActivity.this, "FESTIVAL SONGS", Toast.LENGTH_SHORT).show();
 
                 songsList=fetchFestivalFromDB();
@@ -160,28 +176,23 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
 
 
     public ArrayList<SongDetails> fetchFestivalFromDB() {
-        roomService = new RoomService(getApplication());
         List<SongDetails> songsList = roomService.fetchFestivals();
 
         return (ArrayList) songsList;
     }
 
     public ArrayList<SongDetails> fetchFavouritesFromDB() {
-        roomService = new RoomService(getApplication());
         List<SongDetails> songsList = roomService.fetchFavourites();
-        roomService=new RoomService(getApplication());
         return (ArrayList) songsList;
     }
 
     public ArrayList<SongDetails> fetchDownloadFromDB() {
-        roomService = new RoomService(getApplication());
         List<SongDetails> songsList = roomService.fetchDownloads();
 
         return (ArrayList) songsList;
     }
 
     public ArrayList<SongDetails> fetchAllSongsFromDB() {
-        roomService = new RoomService(getApplication());
         List<SongDetails> songsList = roomService.fetchAllSongs();
 
         return (ArrayList) songsList;

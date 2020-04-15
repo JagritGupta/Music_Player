@@ -73,15 +73,16 @@ public class MusicLibraryAdapter extends RecyclerView.Adapter<MusicLibraryAdapte
 
         final SongDetails songDetails = songsList.get(position);
 
-        if (songDetails.playlistType == "Festival") {
+        if (songDetails.playlistType.equalsIgnoreCase("Festival")) {
             holder.songTitle.setText(songDetails.getSongTitle());
             holder.songDesc.setText(songDetails.getSongDesc());
             holder.songImage.setImageResource(R.drawable.music_player);
-        } else {
+        }
+        else if(songDetails.playlistType.equalsIgnoreCase("Downloads")) {
             holder.songTitle.setText(songDetails.getSongTitle());
             holder.songDesc.setText(songDetails.getSongDesc());
-            //Bitmap bm = BitmapFactory.decodeByteArray(songDetails.songAlbumArt, 0, songDetails.songAlbumArt.length);
-            //holder.songImage.setImageBitmap(bm);
+            Bitmap bm = BitmapFactory.decodeByteArray(songDetails.songAlbumArt, 0, songDetails.songAlbumArt.length);
+            holder.songImage.setImageBitmap(bm);
         }
 
         if (songDetails.isFavourite()) {
