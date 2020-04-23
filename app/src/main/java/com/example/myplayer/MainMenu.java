@@ -3,10 +3,13 @@ package com.example.myplayer;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.Manifest;
+import android.content.ComponentName;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.media.MediaMetadataRetriever;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.IBinder;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
@@ -29,6 +32,12 @@ public class MainMenu extends AppCompatActivity {
     TextView allSongs;
     RoomService roomService;
     private final int[] festivalSongsList = {R.raw.aa_aaye_navratre_ambe_maa, R.raw.jai_jaikaar_sukhwinder_singh, R.raw.lali_lali_laal_chunariya, R.raw.navraton_mein_ghar_mere_aayi};
+    static MyService myService;
+    private boolean isServiceBound;
+    Intent serviceIntent;
+    private ServiceConnection serviceConnection;
+    private static int pos=0;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,17 +47,13 @@ public class MainMenu extends AppCompatActivity {
         favourites = findViewById(R.id.favourites);
         downloads = findViewById(R.id.downloads);
         allSongs = findViewById(R.id.allSongs);
-
     }
-
-
 
 
     @Override
     protected void onResume() {
         super.onResume();
         runTimePermission();
-
     }
 
     public void runTimePermission() {
@@ -59,12 +64,21 @@ public class MainMenu extends AppCompatActivity {
                     public void onPermissionGranted(PermissionGrantedResponse response) {
                         fetchDownloadSongs(Environment.getExternalStorageDirectory());
                         fetchFestivalSongs();
+                        Utility.setFestivalList(festivalSongsList);
+
+                        serviceIntent = new Intent(getApplicationContext(), MyService.class);
+                        serviceIntent.putExtra("SongPos", 0);
+                        serviceIntent.putExtra("ReadyToPlay", false);
+                        startService(serviceIntent);
+                        bindMyService();
+
 
                         festivalSongs.setOnClickListener(new View.OnClickListener() {
                             @Override
                             public void onClick(View v) {
                                 Intent i = new Intent(MainMenu.this, MainActivity.class);
                                 i.putExtra("type", "Festival Songs");
+                                i.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
                                 startActivity(i);
 
                             }
@@ -76,6 +90,7 @@ public class MainMenu extends AppCompatActivity {
 
                                 Intent i = new Intent(MainMenu.this, MainActivity.class);
                                 i.putExtra("type", "Favourites");
+                                i.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
                                 startActivity(i);
 
                             }
@@ -87,6 +102,7 @@ public class MainMenu extends AppCompatActivity {
 
                                 Intent i = new Intent(MainMenu.this, MainActivity.class);
                                 i.putExtra("type", "Downloads");
+                                i.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
                                 startActivity(i);
 
                             }
@@ -97,22 +113,19 @@ public class MainMenu extends AppCompatActivity {
                             public void onClick(View v) {
                                 Intent i = new Intent(MainMenu.this, MainActivity.class);
                                 i.putExtra("type", "AllSongs");
+                                i.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
                                 startActivity(i);
 
                             }
                         });
-
-
                     }
 
                     @Override
                     public void onPermissionDenied(PermissionDeniedResponse response) {
-
                     }
 
                     @Override
                     public void onPermissionRationaleShouldBeShown(PermissionRequest permission, PermissionToken token) {
-
                         token.continuePermissionRequest();
                     }
                 }).check();
@@ -154,7 +167,8 @@ public class MainMenu extends AppCompatActivity {
                             byte[] albumArt = metaRetriver.getEmbeddedPicture();
                             SongDetails singleSong = new SongDetails(albumName, artistName, albumArt);
                             singleSong.setPath(path);
-                            singleSong.setIsFavourite(true);
+                            singleSong.setPosition(pos);
+                            pos++;
                             singleSong.setPlaylistType("Downloads");
                             insertIntoDB(singleSong);
                         }
@@ -167,9 +181,28 @@ public class MainMenu extends AppCompatActivity {
     }
 
     public void insertIntoDB(SongDetails songDetails) {
-        roomService=new RoomService(getApplication());
+        roomService = new RoomService(getApplication());
 
         roomService.insert(songDetails);
 
+    }
+
+    public boolean bindMyService() {
+        serviceConnection = new ServiceConnection() {
+            @Override
+            public void onServiceConnected(ComponentName name, IBinder iBinder) {
+                isServiceBound = true;
+                MyService.MyServiceBinder myServiceBinder = (MyService.MyServiceBinder) iBinder;
+                myService = myServiceBinder.getService();
+            }
+
+            @Override
+            public void onServiceDisconnected(ComponentName name) {
+                isServiceBound = false;
+                myService = null;
+            }
+        };
+        bindService(serviceIntent, serviceConnection, BIND_AUTO_CREATE);
+        return isServiceBound;
     }
 }

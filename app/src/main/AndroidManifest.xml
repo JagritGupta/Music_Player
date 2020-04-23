@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="com.example.myplayer">
 
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
@@ -10,26 +11,38 @@
         android:label="Music"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
+        android:launchMode = "singleInstance"
         android:theme="@style/AppTheme">
         <activity android:name=".MediaPlayer_mini"></activity>
-        <activity android:name=".MainMenu" />
-        <activity android:name=".splashScreenActivity">
+
+        <activity android:name=".MainMenu"
+            android:screenOrientation="portrait"
+            tools:ignore="LockedOrientationActivity"/>
+
+        <activity android:name=".splashScreenActivity"
+            android:screenOrientation="portrait"
+            tools:ignore="LockedOrientationActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".PlayerActivity" />
-        <activity android:name=".MainActivity" />
+        <activity android:name=".PlayerActivity"
+            android:screenOrientation="portrait"
+            tools:ignore="LockedOrientationActivity"/>
 
-        <receiver android:name=".Notification.NotificationActionService" />
+        <activity android:name=".MainActivity"
+            android:screenOrientation="portrait"
+            tools:ignore="LockedOrientationActivity"/>
+
+        <receiver android:name=".SearchOption.NotificationActionService" />
 
        <service
             android:name = ".MyService"
             android:enabled = "true" />
 
-        <service android:name=".Notification.OnClearFromRecentServiceSearch" />
+        <service android:name=".SearchOption.OnClearFromRecentServiceSearch" />
     </application>
 
 </manifest>

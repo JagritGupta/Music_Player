@@ -91,7 +91,7 @@
                 android:layout_alignParentTop="true"
                 android:layout_alignParentRight="true"
                 android:visibility="gone"
-                app:srcCompat="@drawable/fav_filled" />
+                app:srcCompat="@drawable/favfilled" />
         </RelativeLayout>
 
 

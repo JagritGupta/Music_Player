@@ -14,7 +14,7 @@ import android.widget.Toast;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
-import com.example.myplayer.Notification.NotificationActionService;
+import com.example.myplayer.SearchOption.NotificationActionService;
 
 public class CreateNotification {
     public static final String CHANNEL_ID = "channel1";
@@ -23,12 +23,11 @@ public class CreateNotification {
     public static final String ACTION_NEXT = "actionnext";
     public static Notification notification;
 
-    public static void createNotification(Context context, SongDetails songDetails, boolean isPlaying, int pos, int size) {
+    public static void createNotification(Context context, SongDetails songDetails, boolean isPlaying) {
         Bitmap bm=null;
-        Log.e("yups","In CreateNotification");
+        Log.e("Calling","In CreateNotification");
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            Toast.makeText(context, "Integer.toString(Build.LLLLVERSION.SDK_INT)", Toast.LENGTH_LONG).show();
 
             NotificationManagerCompat notificationManagerCompat = NotificationManagerCompat.from(context);
             MediaSessionCompat mediaSessionCompat = new MediaSessionCompat(context, "tag");

@@ -1,5 +1,6 @@
 package com.example.myplayer;
 
+import android.app.Application;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
@@ -30,17 +31,20 @@ import java.util.concurrent.TimeUnit;
 
 public class MusicLibraryAdapter extends RecyclerView.Adapter<MusicLibraryAdapter.MusicViewHolder> {
 
+    Application application;
     Context context;
     ArrayList<SongDetails> songsList = Utility.songsList;
     ArrayList<SongDetails> searchList;
     String typeOfPlaylist = "";
+    private RoomService roomService;
 
 
-    public MusicLibraryAdapter(Context context, ArrayList<SongDetails> songsList, String typeOfPlaylist) {
+    public MusicLibraryAdapter(Context context, ArrayList<SongDetails> songsList, String typeOfPlaylist, Application application) {
         this.context = context;
         this.songsList = songsList;
         this.typeOfPlaylist = typeOfPlaylist;
         this.searchList = new ArrayList<>(songsList);   //so that searchList and albumList remain different.
+        this.application = application;
     }
 
     public MusicLibraryAdapter(Context context, String typeOfPlaylist) {
@@ -50,7 +54,6 @@ public class MusicLibraryAdapter extends RecyclerView.Adapter<MusicLibraryAdapte
     }
 
     public void updateList(List<SongDetails> songsArrList) {
-
         songsList.clear();
         songsList.addAll(songsArrList);
         notifyDataSetChanged();
@@ -62,6 +65,7 @@ public class MusicLibraryAdapter extends RecyclerView.Adapter<MusicLibraryAdapte
 
         LayoutInflater inflater = LayoutInflater.from(context);
         View view = inflater.inflate(R.layout.song_card_design, null);
+        roomService = new RoomService(application);
 
         MusicViewHolder holder = new MusicViewHolder(view);
         return holder;
@@ -78,7 +82,7 @@ public class MusicLibraryAdapter extends RecyclerView.Adapter<MusicLibraryAdapte
             holder.songDesc.setText(songDetails.getSongDesc());
             holder.songImage.setImageResource(R.drawable.music_player);
         }
-        else if(songDetails.playlistType.equalsIgnoreCase("Downloads")) {
+        else if (songDetails.playlistType.equalsIgnoreCase("Downloads")) {
             holder.songTitle.setText(songDetails.getSongTitle());
             holder.songDesc.setText(songDetails.getSongDesc());
             Bitmap bm = BitmapFactory.decodeByteArray(songDetails.songAlbumArt, 0, songDetails.songAlbumArt.length);
@@ -87,7 +91,7 @@ public class MusicLibraryAdapter extends RecyclerView.Adapter<MusicLibraryAdapte
 
         if (songDetails.isFavourite()) {
             holder.unFavBtn.setTag(1);
-            holder.unFavBtn.setImageResource(R.drawable.fav_filled);
+            holder.unFavBtn.setImageResource(R.drawable.favfilled);
         } else {
             holder.unFavBtn.setTag(null);
             holder.unFavBtn.setImageResource(R.drawable.fav);
@@ -100,12 +104,15 @@ public class MusicLibraryAdapter extends RecyclerView.Adapter<MusicLibraryAdapte
                 String songName = songsList.get(position).songTitle;
                 Toast.makeText(context, songName, Toast.LENGTH_LONG).show();
                 Intent i = new Intent(context, PlayerActivity.class);
+                i.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 i.putExtra("position", position);
                 if (typeOfPlaylist == "Favourites") {
                     i.putExtra("isFavouriteMenu", true);
                 } else {
                     i.putExtra("isFavouriteMenu", false);
                 }
+                MainActivity.isMainActivityVisible = false;
+
                 context.startActivity(i);
             }
         });
@@ -116,13 +123,18 @@ public class MusicLibraryAdapter extends RecyclerView.Adapter<MusicLibraryAdapte
                 if (holder.unFavBtn.getTag() == null) {
                     Toast.makeText(context, "Song added to Favourites", Toast.LENGTH_LONG).show();
                     holder.unFavBtn.setTag(1);
-                    holder.unFavBtn.setImageResource(R.drawable.fav_filled);
+                    holder.unFavBtn.setImageResource(R.drawable.favfilled);
                     songDetails.setIsFavourite(true);
+                    Utility.songsList.get(position).setIsFavourite(true);
+                    //Code to insert
+                    roomService.updateDB(songDetails);
                 } else {
                     Toast.makeText(context, "Song removed from Favourites", Toast.LENGTH_LONG).show();
                     holder.unFavBtn.setTag(null);
                     holder.unFavBtn.setImageResource(R.drawable.fav);
                     songDetails.setIsFavourite(false);
+                    Utility.songsList.get(position).setIsFavourite(false);
+                    roomService.deleteSong(songDetails);
                 }
             }
         });

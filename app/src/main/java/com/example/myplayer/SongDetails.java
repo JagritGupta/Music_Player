@@ -1,12 +1,15 @@
 package com.example.myplayer;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
 import androidx.annotation.NonNull;
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
 @Entity(tableName = "songsDB")
-public class SongDetails {
+public class SongDetails implements Parcelable {
 
     String songID;
 
@@ -46,6 +49,7 @@ public class SongDetails {
 
     public SongDetails() {
     }
+
 
 
     public String getSongTitle() {
@@ -111,5 +115,52 @@ public class SongDetails {
 
     public void setPlaylistType(String playlistType) {
         this.playlistType = playlistType;
+    }
+
+
+
+
+    //PARCELABLE CODE
+
+    protected SongDetails(Parcel in) {
+        songID = in.readString();
+        songTitle = in.readString();
+        songDesc = in.readString();
+        songAlbumArt = in.createByteArray();
+        playlistType = in.readString();
+        position = in.readInt();
+        songPath = in.readString();
+        isFavourite = in.readByte() != 0;
+    }
+
+
+    public static final Creator<SongDetails> CREATOR = new Creator<SongDetails>() {
+        @Override
+        public SongDetails createFromParcel(Parcel in) {
+            return new SongDetails(in);
+        }
+
+        @Override
+        public SongDetails[] newArray(int size) {
+            return new SongDetails[size];
+        }
+    };
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeString(songID);
+        dest.writeString(songTitle);
+        dest.writeString(songDesc);
+        dest.writeByteArray(songAlbumArt);
+        dest.writeString(playlistType);
+        dest.writeInt(position);
+        dest.writeString(songPath);
+        dest.writeByte((byte) (isFavourite ? 1 : 0));
     }
 }

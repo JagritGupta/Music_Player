@@ -1,4 +1,4 @@
-package com.example.myplayer.Notification;
+package com.example.myplayer.SearchOption;
 
 import android.app.Service;
 import android.content.Intent;

@@ -18,21 +18,21 @@ import android.util.Log;
 
 import androidx.annotation.Nullable;
 
-import com.example.myplayer.Notification.OnClearFromRecentServiceSearch;
+import com.example.myplayer.SearchOption.OnClearFromRecentServiceSearch;
 
 import java.util.ArrayList;
 
 public class MyService extends Service {
 
-    MediaPlayer mediaPlayer = null;
-    int recyclerViewPosition;
+    static MediaPlayer mediaPlayer = null;
+    static int recyclerViewPosition;
     int totalDuration;
-    int currentPosition;
+    int currentPosition = 0;
     String actionType;
     NotificationManager notificationManager;
     private static MyService instance;
     IBinder mBinder;
-    SongDetails songDetails;
+    static SongDetails songDetails = null;
     ArrayList<SongDetails> songsList;
     private final int[] festivalSongsList = Utility.getFestivalList();
     private boolean isPlaying;
@@ -40,17 +40,22 @@ public class MyService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+        Log.e("Calling", "MyService Created");
 
         songsList = Utility.getSongsList();
         //Create notification
 
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             createChannel();
-            registerReceiver(broadcastReceiver, new IntentFilter("SONGS_LIST"));
-            startService(new Intent(getBaseContext(), OnClearFromRecentServiceSearch.class));
+
+            //startService(new Intent(getBaseContext(), OnClearFromRecentServiceSearch.class));
         }
     }
 
+    public MediaPlayer getMediaPlayer() {
+        return mediaPlayer;
+    }
 
 
     class MyServiceBinder extends Binder {
@@ -60,7 +65,7 @@ public class MyService extends Service {
     }
 
     public static MyService getInstance() {
-        if(instance == null) {
+        if (instance == null) {
             instance = new MyService();
         }
         return instance;
@@ -73,7 +78,7 @@ public class MyService extends Service {
     }
 
 
-   /* @Override
+   /*@Override
     public void onDestroy() {
         super.onDestroy();
     }*/
@@ -83,26 +88,24 @@ public class MyService extends Service {
         mBinder = new MyServiceBinder();
         Bundle bundle = intent.getExtras();
         recyclerViewPosition = bundle.getInt("SongPos");
-        songDetails = songsList.get(recyclerViewPosition);
-        playMedia();
-        CreateNotification.createNotification(MyService.this, songDetails, isPlaying, 1, songsList.size() - 1);
-
-        /*actionType=bundle.getString("ActionType");
-
-        switch (actionType){
-
-            case ACTION_PLAY:
-                playMedia();
-            case ACTION_PAUSE:
-                pausePlaying();
-
-        }*/
+        /*songDetails = songsList.get(recyclerViewPosition);
+        playMedia(songDetails);*/
+        registerReceiver(broadcastReceiver,new IntentFilter("SONG_LIST"));
         return START_STICKY;
     }
 
-    public void playMedia() {
-        if (mediaPlayer != null)
-            mediaPlayer = null;
+    public void playMedia(int recyclerViewPosition) {
+        fetchSongsList();
+        songDetails = songsList.get(recyclerViewPosition);
+        this.sendBroadcast(new Intent("MINI_PLAYER_ACCESS")
+                .putExtra("PAUSE_PLAY", true)
+                .putExtra("SONG_OBJECT", songDetails));
+        if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+            mediaPlayer.stop();
+            mediaPlayer.release();
+            //mediaPlayer = null;
+        }
+
 
         if (songDetails.playlistType.equalsIgnoreCase("Festival"))                  //type FESTIVAL
             mediaPlayer = MediaPlayer.create(getApplicationContext(), festivalSongsList[songDetails.getPosition()]);
@@ -114,47 +117,58 @@ public class MyService extends Service {
 
         mediaPlayer.start();
         isPlaying = true;
+        CreateNotification.createNotification(MyService.this, songDetails, isPlaying);
+
+    }
+
+    private void fetchSongsList() {
+        songsList = Utility.getSongsList();
     }
 
     public void pausePlaying() {
+        Log.e("Calling", "I PAUSE PLAY");
+
+        if(MainActivity.isMainActivityVisible && mediaPlayer.isPlaying())
+            MainActivity.miniPlayPauseBtn.setImageResource(R.drawable.play_btn);
+
+        else if(MainActivity.isMainActivityVisible && !mediaPlayer.isPlaying())
+            MainActivity.miniPlayPauseBtn.setImageResource(R.drawable.pause_btn);
+
+
         if (mediaPlayer.isPlaying()) {
             mediaPlayer.pause();
             isPlaying = false;
-            CreateNotification.createNotification(MyService.this, songDetails,
-                    isPlaying, recyclerViewPosition, songsList.size() - 1);
+
 
         } else {
             isPlaying = true;
-            CreateNotification.createNotification(MyService.this, songDetails,
-                    isPlaying, recyclerViewPosition, songsList.size() - 1);
             mediaPlayer.start();
         }
+
+        CreateNotification.createNotification(MyService.this, songDetails, isPlaying);
     }
 
     public void playNextSong() {
-        if (mediaPlayer != null) {
-            mediaPlayer.stop();
-            mediaPlayer.release();
-            recyclerViewPosition = (recyclerViewPosition + 1) % songsList.size();
-            songDetails = songsList.get(recyclerViewPosition);
-            playMedia();
-            CreateNotification.createNotification(MyService.this, songDetails,
-                    isPlaying, recyclerViewPosition, songsList.size() - 1);
-        }
+
+        Log.e("Calling", "I NEXT CALLED");
+        recyclerViewPosition = (recyclerViewPosition + 1) % songsList.size();
+        songDetails = songsList.get(recyclerViewPosition);
+        playMedia(recyclerViewPosition);
+        if(MainActivity.isMainActivityVisible)
+            MainActivity.miniPlayerAccess();
+
     }
 
     public void playPreviousSong() {
-        if (mediaPlayer != null) {
-            mediaPlayer.stop();
-            mediaPlayer.release();
-            recyclerViewPosition = (recyclerViewPosition - 1) % songsList.size();
-            if (recyclerViewPosition < 0)
-                recyclerViewPosition = songsList.size() - 1;
-            songDetails = songsList.get(recyclerViewPosition);
-            playMedia();
-            CreateNotification.createNotification(MyService.this, songDetails,
-                    isPlaying, recyclerViewPosition, songsList.size() - 1);
-        }
+        Log.e("Calling", "I PREVIOUS CALLED");
+        recyclerViewPosition = (recyclerViewPosition - 1) % songsList.size();
+        if (recyclerViewPosition < 0)
+            recyclerViewPosition = songsList.size() - 1;
+        songDetails = songsList.get(recyclerViewPosition);
+        playMedia(recyclerViewPosition);
+
+        if(MainActivity.isMainActivityVisible)
+            MainActivity.miniPlayerAccess();
     }
 
     public void next10() {
@@ -166,7 +180,7 @@ public class MyService extends Service {
         mediaPlayer.seekTo(currentPosition);
     }
 
-    public void prev10sec(){
+    public void prev10sec() {
         currentPosition = mediaPlayer.getCurrentPosition() - 10000;
 
         if (currentPosition <= 0)
@@ -188,16 +202,21 @@ public class MyService extends Service {
         }
     }
 
-    public void changeSeekBarPosition(int pos){
+    public void changeSeekBarPosition(int pos) {
         mediaPlayer.seekTo(pos);
 
     }
+
     public boolean isMediaPlaying() {
         if (mediaPlayer.isPlaying()) {
             return true;
         } else {
             return false;
         }
+    }
+
+    public int getRecyclerViewPosition() {
+        return recyclerViewPosition;
     }
 
     public SongDetails getCurrentSongObject() {
@@ -241,7 +260,6 @@ public class MyService extends Service {
             }
         }
     };
-
 
 
     @Override

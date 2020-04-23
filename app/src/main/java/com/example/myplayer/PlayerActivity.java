@@ -3,26 +3,19 @@ package com.example.myplayer;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
+import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.content.pm.ActivityInfo;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.PorterDuff;
-import android.media.MediaPlayer;
-import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
 import android.os.IBinder;
-import android.os.Message;
-import android.os.Messenger;
-import android.os.Parcelable;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
@@ -32,20 +25,17 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.myplayer.Notification.OnClearFromRecentServiceSearch;
-
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
 public class PlayerActivity extends AppCompatActivity {
-    Button prevBtn, nextBtn, next10, prev10;
-    static ImageView setToUnfavouriteBtn, setToFavouriteBtn;
-    ImageView pauseBtn, playSongImage;
+    static Button prevBtn, nextBtn;
+    Button next10, prev10;
+    ImageView setToUnfavouriteBtn, setToFavouriteBtn;
+    static ImageView pauseBtn, playSongImage;
     TextView songLabel, startTimer, endTimer;
     SeekBar seekBar;
-    NotificationManager notificationManager;
     String sName;
-    MediaPlayer mediaPlayer;
     int currentPosition, recyclerViewPosition, totalDuration;
     ArrayList<SongDetails> songsList;
     boolean isFavouriteMenuMode = false;
@@ -92,7 +82,8 @@ public class PlayerActivity extends AppCompatActivity {
         getSupportActionBar().setDisplayShowHomeEnabled(true);
         roomService = new RoomService(getApplication());
         serviceIntent = new Intent(getApplicationContext(), MyService.class);
-        registerReceiver(broadcastReceiver, new IntentFilter("SONGS_LIST"));
+        registerReceiver(broadcastReceiver, new IntentFilter("SONG_LIST"));
+        myService = MainMenu.myService;
 
         pauseBtn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -139,10 +130,13 @@ public class PlayerActivity extends AppCompatActivity {
                         sleep(500);
                         currentPosition = myService.getCurrentPlayerPosition();
                         seekBar.setProgress(currentPosition);
+
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
                 }
+
+
             }
         };
 
@@ -152,20 +146,16 @@ public class PlayerActivity extends AppCompatActivity {
         songsList = Utility.getSongsList();
         recyclerViewPosition = bundle.getInt("position");
         isFavouriteMenuMode = bundle.getBoolean("isFavouriteMenu");
-        songDetails = songsList.get(recyclerViewPosition);
+        if (recyclerViewPosition != -1) {           //fresh start with PlayerActivity
+            songDetails = songsList.get(recyclerViewPosition);
+            playMedia(songDetails);
+            displayIntoMediaPlayer(songDetails);
+        } else {
+            songDetails = myService.getCurrentSongObject();
+            displayIntoMediaPlayer(songDetails);
 
+        }
 
-        displayIntoMediaPlayer(songDetails);
-        playMedia(songDetails);
-
-       /* //Create notification
-        CreateNotification.createNotification(PlayerActivity.this, songDetails, isPlaying, 1, songsList.size() - 1);
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            createChannel();
-            registerReceiver(broadcastReceiver, new IntentFilter("SONGS_LIST"));
-            startService(new Intent(getBaseContext(), OnClearFromRecentServiceSearch.class));
-        }*/
 
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
@@ -213,9 +203,9 @@ public class PlayerActivity extends AppCompatActivity {
                 setToFavouriteBtn.setVisibility(View.GONE);
                 setToUnfavouriteBtn.setVisibility(View.VISIBLE);
                 songDetails.setIsFavourite(true);
-                Utility.songsList.get(recyclerViewPosition).setIsFavourite(true);
+                Utility.songsList.get(myService.getRecyclerViewPosition()).setIsFavourite(true);
                 //Code to insert
-                roomService.insert(songDetails);
+                roomService.updateDB(songDetails);
 
             }
         });
@@ -225,7 +215,7 @@ public class PlayerActivity extends AppCompatActivity {
             public void onClick(View v) {
                 Toast.makeText(PlayerActivity.this, "Song removed from your favourites", Toast.LENGTH_SHORT).show();
                 songDetails.setIsFavourite(false);
-                Utility.songsList.get(recyclerViewPosition).setIsFavourite(true);
+                Utility.songsList.get(myService.getRecyclerViewPosition()).setIsFavourite(false);
                 roomService.deleteSong(songDetails);
                 setToFavouriteBtn.setVisibility(View.VISIBLE);
                 setToUnfavouriteBtn.setVisibility(View.GONE);
@@ -235,16 +225,7 @@ public class PlayerActivity extends AppCompatActivity {
 
 
     public void playMedia(SongDetails songDetails) {
-        serviceIntent.putExtra("SongPos", recyclerViewPosition);
-        startService(serviceIntent);
-        isServiceBound = bindMyService();
-
-        seekBar.setProgress(0);
-        //callResetSeekBar();
-        //updateSeekBar.start();
-        seekBar.getProgressDrawable().setColorFilter(getResources().getColor(R.color.colorPrimary), PorterDuff.Mode.MULTIPLY);
-        seekBar.getThumb().setColorFilter(getResources().getColor(R.color.colorPrimaryDark), PorterDuff.Mode.SRC_IN);
-
+        myService.playMedia(recyclerViewPosition);
     }
 
     public void displayIntoMediaPlayer(SongDetails songDetails) {
@@ -256,6 +237,23 @@ public class PlayerActivity extends AppCompatActivity {
         songLabel.setText(songName);
         songLabel.setSelected(true);
         Toast.makeText(PlayerActivity.this, songName, Toast.LENGTH_LONG).show();
+
+        seekBar.setMax(myService.getTotalDuration());
+        setTimer(myService.getCurrentPlayerPosition());
+        setEndTimer(myService.getTotalDuration());
+
+        if(myService.isMediaPlaying()){
+            pauseBtn.setImageResource(R.drawable.pause_btn);
+        }
+        else{
+            pauseBtn.setImageResource(R.drawable.play_btn);
+        }
+
+        callResetSeekBar();
+        updateSeekBar.start();
+        seekBar.setProgress(myService.getCurrentPlayerPosition());
+        seekBar.getProgressDrawable().setColorFilter(getResources().getColor(R.color.iconColor), PorterDuff.Mode.MULTIPLY);
+        seekBar.getThumb().setColorFilter(getResources().getColor(R.color.colorPrimaryDark), PorterDuff.Mode.SRC_IN);
 
         if (songDetails.playlistType.equalsIgnoreCase("Festival")) {
             playSongImage.setImageResource(R.drawable.music_player);
@@ -273,28 +271,6 @@ public class PlayerActivity extends AppCompatActivity {
         }
     }
 
-    public boolean bindMyService() {
-        serviceConnection = new ServiceConnection() {
-            @Override
-            public void onServiceConnected(ComponentName name, IBinder iBinder) {
-                isServiceBound = true;
-                MyService.MyServiceBinder myServiceBinder = (MyService.MyServiceBinder) iBinder;
-                myService = myServiceBinder.getService();
-                seekBar.setMax(myService.getTotalDuration());
-                setEndTimer(myService.getTotalDuration());
-                updateSeekBar.start();
-            }
-
-            @Override
-            public void onServiceDisconnected(ComponentName name) {
-                isServiceBound = false;
-                myService = null;
-            }
-        };
-        bindService(serviceIntent, serviceConnection, BIND_AUTO_CREATE);
-        return isServiceBound;
-    }
-
     public void unBindService() {
         if (isServiceBound) {
             unbindService(serviceConnection);
@@ -302,19 +278,6 @@ public class PlayerActivity extends AppCompatActivity {
         }
     }
 
-
-    /*private void createChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(CreateNotification.CHANNEL_ID, "JG", NotificationManager.IMPORTANCE_LOW);
-
-            notificationManager = getSystemService(NotificationManager.class);
-
-            if (notificationManager != null) {
-                notificationManager.createNotificationChannel(channel);
-            }
-
-        }
-    }*/
 
     @Override
     protected void onResume() {
@@ -325,8 +288,10 @@ public class PlayerActivity extends AppCompatActivity {
     public void onBackPressed() {
         super.onBackPressed();
         onResume();
-        MainActivity.miniPlayerAccess(songDetails, true);
+        //MainActivity.miniPlayerAccess();
+        if(songDetails.isFavourite){
 
+        }
         if (isFavouriteMenuMode == true && !songDetails.isFavourite()) {
             songsList.remove(songDetails);
             Utility.setSongsList(songsList);
@@ -338,13 +303,13 @@ public class PlayerActivity extends AppCompatActivity {
             @Override
             public void run() {
                 super.run();
-                totalDuration = mediaPlayer.getDuration();
+                totalDuration = myService.getTotalDuration();
                 currentPosition = 0;
 
                 while (currentPosition < totalDuration) {
                     try {
                         sleep(500);
-                        currentPosition = mediaPlayer.getCurrentPosition();
+                        currentPosition = myService.getCurrentPlayerPosition();
                         seekBar.setProgress(currentPosition);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
@@ -376,11 +341,11 @@ public class PlayerActivity extends AppCompatActivity {
 
             switch (action) {
                 case CreateNotification.ACTION_PREVIOUS:
-                    Log.e("yups", "In playerActivity  ");
                     prevBtn.performClick();
                     break;
 
                 case CreateNotification.ACTION_NEXT:
+                    Log.e("yups", "In playerActivity  ");
                     nextBtn.performClick();
                     break;
 

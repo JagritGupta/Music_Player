@@ -6,10 +6,16 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.annotation.SuppressLint;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.pm.ActivityInfo;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.MediaMetadataRetriever;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
@@ -29,6 +35,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import static com.example.myplayer.CONSTANTS.ACTION_PAUSE;
+import static com.example.myplayer.CONSTANTS.ACTION_PLAY;
 import static java.util.Collections.sort;
 
 public class MainActivity extends AppCompatActivity implements SearchView.OnQueryTextListener {
@@ -38,17 +46,16 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
     ArrayList<SongDetails> songsList = null;
     ArrayList<SongDetails> songsFilterList = null;
     HashMap<String, String> songFavMap = null;
-    String artistName = "Artist Name";
     public static RelativeLayout miniPlayerLayout, miniSongInfoLayout;
     public static TextView miniSongTitle, miniSongDesc;
     public static ImageView miniPlayPauseBtn, miniSongImg;
     static int pos = 0;
     RoomService roomService;
-    MyService myService;
-    public static boolean isMainActivityVisible=false;
+    static MyService myService;
+    public static boolean isMainActivityVisible = false;
     private final int[] festivalSongsList = {R.raw.aa_aaye_navratre_ambe_maa, R.raw.jai_jaikaar_sukhwinder_singh, R.raw.lali_lali_laal_chunariya, R.raw.navraton_mein_ghar_mere_aayi};
 
-    SongDetails songDetails;
+    static SongDetails songDetails;
     String menuType, typeOfPlaylist;
 
 
@@ -56,9 +63,7 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        isMainActivityVisible=true;
-        //fetchFestivalSongs();
-        //fetchDownloadSongs(Environment.getExternalStorageDirectory());
+        isMainActivityVisible = true;
         songsList = new ArrayList<>();
         recyclerView = findViewById(R.id.recycler_view);
         noSongsFound = findViewById(R.id.noDataFound);
@@ -67,6 +72,7 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
         Intent i = getIntent();
         menuType = i.getStringExtra("type");
         songsList = displaySongsInArrayList(menuType);
+        myService=MainMenu.myService;
         Utility.setFestivalList(festivalSongsList);
         miniPlayerLayout = findViewById(R.id.mini_mediaPlayer);
         miniSongInfoLayout = findViewById(R.id.song_info_layout);
@@ -75,53 +81,82 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
         miniSongTitle = findViewById(R.id.song_name);
         miniSongImg = findViewById(R.id.song_imageView);
         Utility.setSongsList(songsList);
-        musicLibraryAdapter = new MusicLibraryAdapter(this, songsList, typeOfPlaylist);
+        musicLibraryAdapter = new MusicLibraryAdapter(this, songsList, typeOfPlaylist,getApplication());
         recyclerView.setAdapter(musicLibraryAdapter);
+
+
         miniSongInfoLayout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent i=new Intent(MainActivity.this,PlayerActivity.class);
-                i.putExtra("position",songDetails.getPosition());
-                i.putExtra("isFavouriteMenu",false);
+                Intent i = new Intent(MainActivity.this, PlayerActivity.class);
+                i.putExtra("position", -1);
+                i.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                isMainActivityVisible = false;
                 startActivity(i);
+            }
+        });
+
+        miniPlayPauseBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                myService.pausePlaying();
+                if (myService.isMediaPlaying()) {
+                    miniPlayPauseBtn.setImageResource(R.drawable.pause_btn);
+                } else {
+                    miniPlayPauseBtn.setImageResource(R.drawable.play_btn);
+                }
+
             }
         });
     }
 
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        isMainActivityVisible=false;
+    }
 
-    public static void miniPlayerAccess(SongDetails songDetails,Boolean isVisible) {
-        if(songDetails!=null){
-            isVisible=true;
-        }
-        if (isVisible) {
+    public static void miniPlayerAccess() {
+        MediaPlayer mediaPlayer=myService.getMediaPlayer();
+        if(mediaPlayer!=null) {
+            songDetails = myService.getCurrentSongObject();
             miniPlayerLayout.setVisibility(View.VISIBLE);
             miniSongTitle.setText(songDetails.songTitle);
             miniSongDesc.setText(songDetails.songDesc);
+            if (mediaPlayer.isPlaying()) {
+                miniPlayPauseBtn.setImageResource(R.drawable.pause_btn);
+            } else {
+                miniPlayPauseBtn.setImageResource(R.drawable.play_btn);
+            }
 
             if (songDetails.playlistType.equalsIgnoreCase("Festival")) {
                 miniSongImg.setImageResource(R.drawable.music_player);
-            }
-            else {
+            } else {
                 Bitmap bm = BitmapFactory.decodeByteArray(songDetails.songAlbumArt, 0, songDetails.songAlbumArt.length);
                 miniSongImg.setImageBitmap(bm);
             }
         }
+
     }
 
     @Override
     protected void onResume() {
+        isMainActivityVisible = true;
+        miniPlayerAccess();
         super.onResume();
-        isMainActivityVisible=true;
+        //registerReceiver(mBroadcastReceiver, new IntentFilter("MINI_PLAYER_ACCESS"));
+
+
     }
 
     public ArrayList<SongDetails> displaySongsInArrayList(String menuType) {
 
-        roomService=new RoomService(getApplication());
+        roomService = new RoomService(getApplication());
         switch (menuType) {
             case "Festival Songs":
                 Toast.makeText(MainActivity.this, "FESTIVAL SONGS", Toast.LENGTH_SHORT).show();
 
-                songsList=fetchFestivalFromDB();
+                songsList = fetchFestivalFromDB();
 
                 if (songsList.size() == 0) {
                     recyclerView.setVisibility(View.GONE);
@@ -149,7 +184,7 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
                 songFavMap = new HashMap<>();
                 //fetchFavouriteSongs();
                 songsList = new ArrayList<>();
-                songsList=fetchDownloadFromDB();
+                songsList = fetchDownloadFromDB();
 
                 if (songsList.size() == 0) {
                     recyclerView.setVisibility(View.GONE);
@@ -160,7 +195,7 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
             case "AllSongs":
                 Toast.makeText(MainActivity.this, "ALL SONGS", Toast.LENGTH_SHORT).show();
 
-                songsList=fetchAllSongsFromDB();
+                songsList = fetchAllSongsFromDB();
 
                 typeOfPlaylist = "All Songs";
                 if (songsList.size() == 0) {
@@ -168,8 +203,6 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
                     noSongsFound.setVisibility(View.VISIBLE);
                 }
                 return songsList;
-
-
         }
         return null;
     }
@@ -198,6 +231,21 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
         return (ArrayList) songsList;
     }
 
+
+    /*BroadcastReceiver mBroadcastReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String pausePlay = intent.getExtras().getString("PAUSE_PLAY");
+            SongDetails songDetails = (SongDetails) intent.getExtras().getParcelable("SONG_OBJECT");
+            switch ((pausePlay)) {
+                case ACTION_PLAY:
+                    miniPlayerAccess(songDetails, true);
+
+                case ACTION_PAUSE:
+                    miniPlayerAccess(songDetails, false);
+            }
+        }
+    };*/
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -254,7 +302,7 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
 
         @Override
         public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
-            SongDetails songDetails=songsList.get(viewHolder.getAdapterPosition());
+            SongDetails songDetails = songsList.get(viewHolder.getAdapterPosition());
             roomService.deleteSong(songDetails);
             songsList.remove(songDetails);
             Utility.setSongsList(songsList);

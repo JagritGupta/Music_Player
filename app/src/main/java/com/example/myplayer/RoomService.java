@@ -19,6 +19,10 @@ public class RoomService {
         new InsertAsyncTask().execute(songDetails);
     }
 
+    public void updateDB(SongDetails songDetails) {
+        new UpdateAsyncTask().execute(songDetails);
+    }
+
     public void deleteSong(SongDetails songDetails) {
         new DeleteAsyncTask().execute(songDetails);
     }
@@ -45,6 +49,8 @@ public class RoomService {
         }
         return null;
     }
+
+
 
     public List<SongDetails> fetchDownloads() {
         try {
@@ -76,6 +82,17 @@ public class RoomService {
         @Override
         protected Void doInBackground(SongDetails... songsList) {
             roomDB.dao().insert(songsList[0]);
+            return null;
+        }
+    }
+
+    private class UpdateAsyncTask extends AsyncTask<SongDetails, Void, Void> {
+        public UpdateAsyncTask() {
+        }
+
+        @Override
+        protected Void doInBackground(SongDetails... songsList) {
+            roomDB.dao().setToFavInDB(songsList[0]);
             return null;
         }
     }
