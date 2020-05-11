@@ -7,10 +7,19 @@ import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.media.MediaMetadataRetriever;
+import android.media.session.MediaController;
+import android.media.session.MediaSession;
+import android.media.session.PlaybackState;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.IBinder;
+import android.os.SystemClock;
+import android.provider.ContactsContract;
+import android.support.v4.media.session.MediaSessionCompat;
+import android.support.v4.media.session.PlaybackStateCompat;
 import android.util.Log;
+import android.view.ActionMode;
 import android.view.View;
 import android.widget.TextView;
 
@@ -24,6 +33,8 @@ import com.karumi.dexter.listener.single.PermissionListener;
 import java.io.File;
 import java.lang.reflect.Field;
 
+import javax.security.auth.callback.Callback;
+
 public class MainMenu extends AppCompatActivity {
 
     TextView festivalSongs;
@@ -36,8 +47,7 @@ public class MainMenu extends AppCompatActivity {
     private boolean isServiceBound;
     Intent serviceIntent;
     private ServiceConnection serviceConnection;
-    private static int pos=0;
-
+    private static int pos = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,6 +57,8 @@ public class MainMenu extends AppCompatActivity {
         favourites = findViewById(R.id.favourites);
         downloads = findViewById(R.id.downloads);
         allSongs = findViewById(R.id.allSongs);
+
+
     }
 
 
@@ -69,6 +81,9 @@ public class MainMenu extends AppCompatActivity {
                         serviceIntent = new Intent(getApplicationContext(), MyService.class);
                         serviceIntent.putExtra("SongPos", 0);
                         serviceIntent.putExtra("ReadyToPlay", false);
+                        /*if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            startForegroundService(serviceIntent);
+                        }*/
                         startService(serviceIntent);
                         bindMyService();
 

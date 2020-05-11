@@ -72,7 +72,7 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
         Intent i = getIntent();
         menuType = i.getStringExtra("type");
         songsList = displaySongsInArrayList(menuType);
-        myService=MainMenu.myService;
+        myService = MainMenu.myService;
         Utility.setFestivalList(festivalSongsList);
         miniPlayerLayout = findViewById(R.id.mini_mediaPlayer);
         miniSongInfoLayout = findViewById(R.id.song_info_layout);
@@ -81,7 +81,7 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
         miniSongTitle = findViewById(R.id.song_name);
         miniSongImg = findViewById(R.id.song_imageView);
         Utility.setSongsList(songsList);
-        musicLibraryAdapter = new MusicLibraryAdapter(this, songsList, typeOfPlaylist,getApplication());
+        musicLibraryAdapter = new MusicLibraryAdapter(this, songsList, typeOfPlaylist, getApplication());
         recyclerView.setAdapter(musicLibraryAdapter);
 
 
@@ -113,12 +113,12 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
     @Override
     public void onBackPressed() {
         super.onBackPressed();
-        isMainActivityVisible=false;
+        isMainActivityVisible = false;
     }
 
     public static void miniPlayerAccess() {
-        MediaPlayer mediaPlayer=myService.getMediaPlayer();
-        if(mediaPlayer!=null) {
+        MediaPlayer mediaPlayer = myService.getMediaPlayer();
+        if (mediaPlayer != null) {
             songDetails = myService.getCurrentSongObject();
             miniPlayerLayout.setVisibility(View.VISIBLE);
             miniSongTitle.setText(songDetails.songTitle);
@@ -144,9 +144,7 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
         isMainActivityVisible = true;
         miniPlayerAccess();
         super.onResume();
-        //registerReceiver(mBroadcastReceiver, new IntentFilter("MINI_PLAYER_ACCESS"));
-
-
+        musicLibraryAdapter.notifyDataSetChanged();
     }
 
     public ArrayList<SongDetails> displaySongsInArrayList(String menuType) {
@@ -232,21 +230,6 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
     }
 
 
-    /*BroadcastReceiver mBroadcastReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String pausePlay = intent.getExtras().getString("PAUSE_PLAY");
-            SongDetails songDetails = (SongDetails) intent.getExtras().getParcelable("SONG_OBJECT");
-            switch ((pausePlay)) {
-                case ACTION_PLAY:
-                    miniPlayerAccess(songDetails, true);
-
-                case ACTION_PAUSE:
-                    miniPlayerAccess(songDetails, false);
-            }
-        }
-    };*/
-
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
@@ -294,6 +277,9 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
         return true;
     }
 
+
+
+    //Feature of delete item on Swipe in the Favourite Options
     ItemTouchHelper.SimpleCallback itemTouchHelperCallback = new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.RIGHT | ItemTouchHelper.LEFT) {
         @Override
         public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {

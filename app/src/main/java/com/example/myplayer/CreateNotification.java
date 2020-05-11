@@ -50,7 +50,7 @@ public class CreateNotification {
 
 
             Intent intentPlay = new Intent(context, NotificationActionService.class)
-                    .setAction(ACTION_PLAY);
+                     .setAction(ACTION_PLAY);
             PendingIntent pendingIntentPlay = PendingIntent.getBroadcast(context, 0,
                     intentPlay, PendingIntent.FLAG_UPDATE_CURRENT);
             int drw_play;
@@ -63,10 +63,17 @@ public class CreateNotification {
             PendingIntent pendingIntentNext;
             int drw_next;
             Intent intentNext = new Intent(context, NotificationActionService.class)
-                    .setAction(ACTION_NEXT);
+                                .setAction(ACTION_NEXT);
             pendingIntentNext = PendingIntent.getBroadcast(context, 0,
                     intentNext, PendingIntent.FLAG_UPDATE_CURRENT);
             drw_next = R.drawable.next_btn;
+
+            Intent intentOpen=new Intent(context, PlayerActivity.class);
+            intentOpen.putExtra("position",-1);
+            intentOpen.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            PendingIntent pendingWholeClick = PendingIntent.getActivity(context, 0,
+                    intentOpen, PendingIntent.FLAG_UPDATE_CURRENT);
+
 
 
             //create notifcation
@@ -74,6 +81,8 @@ public class CreateNotification {
                     .setSmallIcon(R.drawable.music_player)
                     .setContentTitle(songDetails.getSongTitle())
                     .setContentText(songDetails.getSongDesc())
+                    .setContentIntent(pendingWholeClick)
+                    .setAutoCancel(true)
                     .setLargeIcon(bm)
                     .setOnlyAlertOnce(true)
                     .setShowWhen(false)

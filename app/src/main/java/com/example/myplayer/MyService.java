@@ -5,16 +5,25 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.Service;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.media.MediaPlayer;
+import android.media.session.MediaSession;
+import android.media.session.PlaybackState;
 import android.net.Uri;
 import android.os.Binder;
+
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.os.SystemClock;
+import android.support.v4.media.MediaBrowserCompat;
+import android.support.v4.media.session.MediaSessionCompat;
+import android.support.v4.media.session.PlaybackStateCompat;
 import android.util.Log;
+import android.view.KeyEvent;
 
 import androidx.annotation.Nullable;
 
@@ -36,6 +45,8 @@ public class MyService extends Service {
     ArrayList<SongDetails> songsList;
     private final int[] festivalSongsList = Utility.getFestivalList();
     private boolean isPlaying;
+    public static final int FLAG_HANDLES_MEDIA_BUTTONS = 0;
+    private MediaSession mediaSession;
 
     @Override
     public void onCreate() {
@@ -43,8 +54,6 @@ public class MyService extends Service {
         Log.e("Calling", "MyService Created");
 
         songsList = Utility.getSongsList();
-        //Create notification
-
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             createChannel();
@@ -52,6 +61,7 @@ public class MyService extends Service {
             //startService(new Intent(getBaseContext(), OnClearFromRecentServiceSearch.class));
         }
     }
+
 
     public MediaPlayer getMediaPlayer() {
         return mediaPlayer;
@@ -97,9 +107,7 @@ public class MyService extends Service {
     public void playMedia(int recyclerViewPosition) {
         fetchSongsList();
         songDetails = songsList.get(recyclerViewPosition);
-        this.sendBroadcast(new Intent("MINI_PLAYER_ACCESS")
-                .putExtra("PAUSE_PLAY", true)
-                .putExtra("SONG_OBJECT", songDetails));
+
         if (mediaPlayer != null && mediaPlayer.isPlaying()) {
             mediaPlayer.stop();
             mediaPlayer.release();
@@ -154,7 +162,7 @@ public class MyService extends Service {
         recyclerViewPosition = (recyclerViewPosition + 1) % songsList.size();
         songDetails = songsList.get(recyclerViewPosition);
         playMedia(recyclerViewPosition);
-        if(MainActivity.isMainActivityVisible)
+        if (MainActivity.isMainActivityVisible)
             MainActivity.miniPlayerAccess();
 
     }
@@ -167,7 +175,7 @@ public class MyService extends Service {
         songDetails = songsList.get(recyclerViewPosition);
         playMedia(recyclerViewPosition);
 
-        if(MainActivity.isMainActivityVisible)
+        if (MainActivity.isMainActivityVisible)
             MainActivity.miniPlayerAccess();
     }
 
@@ -195,11 +203,13 @@ public class MyService extends Service {
     }
 
     public int getCurrentPlayerPosition() {
+
         if (mediaPlayer != null) {
             return mediaPlayer.getCurrentPosition();
         } else {
             return 0;
         }
+
     }
 
     public void changeSeekBarPosition(int pos) {
@@ -247,15 +257,15 @@ public class MyService extends Service {
             switch (action) {
 
                 case CreateNotification.ACTION_PLAY:
-                    pausePlaying();
+                    PlayerActivity.pauseBtn.performClick();
                     break;
 
                 case CreateNotification.ACTION_NEXT:
-                    playNextSong();
+                    PlayerActivity.nextBtn.performClick();
                     break;
 
                 case CreateNotification.ACTION_PREVIOUS:
-                    playPreviousSong();
+                    PlayerActivity.prevBtn.performClick();
                     break;
             }
         }
