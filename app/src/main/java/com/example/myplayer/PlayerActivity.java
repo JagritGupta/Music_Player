@@ -29,10 +29,11 @@ import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
 public class PlayerActivity extends AppCompatActivity {
-    static Button prevBtn, nextBtn;
+    public static Button prevBtn, nextBtn;
     Button next10, prev10;
-    ImageView setToUnfavouriteBtn, setToFavouriteBtn;
-    static ImageView pauseBtn, playSongImage;
+    ImageView setToUnfavouriteBtn, setToFavouriteBtn, playSongImage;
+    static ImageView pauseBtn;
+    public static boolean isPlayerActivityActive = false;
     TextView songLabel, startTimer, endTimer;
     SeekBar seekBar;
     String sName;
@@ -64,7 +65,7 @@ public class PlayerActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_player);
-
+        isPlayerActivityActive = true;
         pauseBtn = findViewById(R.id.btn_pause);
         prevBtn = findViewById(R.id.btn_prev);
         setToUnfavouriteBtn = findViewById(R.id.favFilled);
@@ -82,7 +83,6 @@ public class PlayerActivity extends AppCompatActivity {
         getSupportActionBar().setDisplayShowHomeEnabled(true);
         roomService = new RoomService(getApplication());
         serviceIntent = new Intent(getApplicationContext(), MyService.class);
-        registerReceiver(broadcastReceiver, new IntentFilter("SONG_LIST"));
         myService = MainMenu.myService;
 
         pauseBtn.setOnClickListener(new View.OnClickListener() {
@@ -126,16 +126,16 @@ public class PlayerActivity extends AppCompatActivity {
                 currentPosition = 0;
 
                 while (currentPosition < totalDuration) {
-                    try {
-                        sleep(500);
-                        currentPosition = myService.getCurrentPlayerPosition();
-                        seekBar.setProgress(currentPosition);
 
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
+                    currentPosition = myService.getCurrentPlayerPosition();
+                    seekBar.setProgress(currentPosition);
+
+
                 }
 
+                if (myService.getCurrentPlayerPosition() >= myService.getTotalDuration()) {
+                    nextBtn.performClick();
+                }
 
             }
         };
@@ -242,10 +242,9 @@ public class PlayerActivity extends AppCompatActivity {
         setTimer(myService.getCurrentPlayerPosition());
         setEndTimer(myService.getTotalDuration());
 
-        if(myService.isMediaPlaying()){
+        if (myService.isMediaPlaying()) {
             pauseBtn.setImageResource(R.drawable.pause_btn);
-        }
-        else{
+        } else {
             pauseBtn.setImageResource(R.drawable.play_btn);
         }
 
@@ -281,6 +280,8 @@ public class PlayerActivity extends AppCompatActivity {
 
     @Override
     protected void onResume() {
+
+        isPlayerActivityActive = true;
         super.onResume();
     }
 
@@ -288,8 +289,8 @@ public class PlayerActivity extends AppCompatActivity {
     public void onBackPressed() {
         super.onBackPressed();
         onResume();
-        //MainActivity.miniPlayerAccess();
-        if(songDetails.isFavourite){
+        isPlayerActivityActive = false;
+        if (songDetails.isFavourite) {
 
         }
         if (isFavouriteMenuMode == true && !songDetails.isFavourite()) {
@@ -315,9 +316,20 @@ public class PlayerActivity extends AppCompatActivity {
                         e.printStackTrace();
                     }
                 }
+
+                if (myService.getCurrentPlayerPosition() >= myService.getTotalDuration()) {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            nextBtn.performClick();
+                        }
+                    });
+                }
+
             }
         };
     }
+
 
     public void setTimer(long millis) {
         String hms = String.format("%02d:%02d",
