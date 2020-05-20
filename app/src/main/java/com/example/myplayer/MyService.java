@@ -37,7 +37,6 @@ public class MyService extends Service {
     static int recyclerViewPosition;
     int totalDuration;
     int currentPosition = 0;
-    String actionType;
     NotificationManager notificationManager;
     private static MyService instance;
     IBinder mBinder;
@@ -45,8 +44,6 @@ public class MyService extends Service {
     ArrayList<SongDetails> songsList;
     private final int[] festivalSongsList = Utility.getFestivalList();
     private boolean isPlaying;
-    public static final int FLAG_HANDLES_MEDIA_BUTTONS = 0;
-    private MediaSession mediaSession;
 
     @Override
     public void onCreate() {
@@ -57,8 +54,6 @@ public class MyService extends Service {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             createChannel();
-
-            //startService(new Intent(getBaseContext(), OnClearFromRecentServiceSearch.class));
         }
     }
 

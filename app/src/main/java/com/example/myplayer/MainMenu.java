@@ -58,7 +58,6 @@ public class MainMenu extends AppCompatActivity {
         downloads = findViewById(R.id.downloads);
         allSongs = findViewById(R.id.allSongs);
 
-
     }
 
 
