@@ -3,12 +3,15 @@ package com.example.myplayer;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.media.MediaPlayer;
 import android.media.session.MediaSession;
 import android.media.session.PlaybackState;
@@ -22,11 +25,16 @@ import android.os.SystemClock;
 import android.support.v4.media.MediaBrowserCompat;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
+import android.telephony.PhoneStateListener;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.KeyEvent;
 
 import androidx.annotation.Nullable;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 
+import com.example.myplayer.SearchOption.NotificationActionService;
 import com.example.myplayer.SearchOption.OnClearFromRecentServiceSearch;
 
 import java.util.ArrayList;
@@ -44,7 +52,11 @@ public class MyService extends Service {
     ArrayList<SongDetails> songsList;
     private final int[] festivalSongsList = Utility.getFestivalList();
     private boolean isPlaying;
-
+    public static final String CHANNEL_ID = "channel1";
+    public static final String ACTION_PREVIOUS = "actionprevious";
+    public static final String ACTION_PLAY = "actionplay";
+    public static final String ACTION_NEXT = "actionnext";
+    public static Notification notification;
     @Override
     public void onCreate() {
         super.onCreate();
@@ -55,7 +67,26 @@ public class MyService extends Service {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             createChannel();
         }
-    }
+
+        PhoneStateListener phoneStateListener = new PhoneStateListener() {
+            @Override
+            public void onCallStateChanged(int state, String incomingNumber) {
+                if (state == TelephonyManager.CALL_STATE_RINGING) {
+                    if(mediaPlayer!=null && mediaPlayer.isPlaying()){
+                        mediaPlayer.pause();
+                    }
+                } else if(state == TelephonyManager.CALL_STATE_IDLE) {
+                    //Not in call: Play music
+                } else if(state == TelephonyManager.CALL_STATE_OFFHOOK) {
+                    //A call is dialing, active or on hold
+                }
+                super.onCallStateChanged(state, incomingNumber);
+            }
+        };
+        TelephonyManager mgr = (TelephonyManager) getSystemService(TELEPHONY_SERVICE);
+        if(mgr != null) {
+            mgr.listen(phoneStateListener, PhoneStateListener.LISTEN_CALL_STATE);
+        }    }
 
 
     public MediaPlayer getMediaPlayer() {
@@ -120,7 +151,7 @@ public class MyService extends Service {
 
         mediaPlayer.start();
         isPlaying = true;
-        CreateNotification.createNotification(MyService.this, songDetails, isPlaying);
+        createNotification(MyService.this, songDetails, isPlaying);
 
     }
 
@@ -148,7 +179,7 @@ public class MyService extends Service {
             mediaPlayer.start();
         }
 
-        CreateNotification.createNotification(MyService.this, songDetails, isPlaying);
+        createNotification(MyService.this, songDetails, isPlaying);
     }
 
     public void playNextSong() {
@@ -210,6 +241,82 @@ public class MyService extends Service {
     public void changeSeekBarPosition(int pos) {
         mediaPlayer.seekTo(pos);
 
+    }
+
+    public  void createNotification(Context context, SongDetails songDetails, boolean isPlaying) {
+        Bitmap bm=null;
+        Log.e("Calling","In CreateNotification");
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+
+            NotificationManagerCompat notificationManagerCompat = NotificationManagerCompat.from(context);
+            MediaSessionCompat mediaSessionCompat = new MediaSessionCompat(context, "tag");
+
+
+            if (songDetails.playlistType.equalsIgnoreCase("Festival")) {
+                bm = BitmapFactory.decodeResource(context.getResources(), R.drawable.music_player);
+            } else if(songDetails.playlistType.equalsIgnoreCase("Downloads")) {
+                bm = BitmapFactory.decodeByteArray(songDetails.songAlbumArt, 0, songDetails.songAlbumArt.length);
+            }
+
+            PendingIntent pendingIntentPrevious;
+            int drw_prvs;
+
+            Intent intentPrevious = new Intent(context, NotificationActionService.class)
+                    .setAction(ACTION_PREVIOUS);
+            pendingIntentPrevious = PendingIntent.getBroadcast(context, 0,
+                    intentPrevious, PendingIntent.FLAG_UPDATE_CURRENT);
+            drw_prvs = R.drawable.prev_btn;
+
+
+            Intent intentPlay = new Intent(context, NotificationActionService.class)
+                    .setAction(ACTION_PLAY);
+            PendingIntent pendingIntentPlay = PendingIntent.getBroadcast(context, 0,
+                    intentPlay, PendingIntent.FLAG_UPDATE_CURRENT);
+            int drw_play;
+            if (isPlaying) {
+                drw_play = R.drawable.pause_btn;
+            } else {
+                drw_play = R.drawable.play_btn;
+            }
+
+            PendingIntent pendingIntentNext;
+            int drw_next;
+            Intent intentNext = new Intent(context, NotificationActionService.class)
+                    .setAction(ACTION_NEXT);
+            pendingIntentNext = PendingIntent.getBroadcast(context, 0,
+                    intentNext, PendingIntent.FLAG_UPDATE_CURRENT);
+            drw_next = R.drawable.next_btn;
+
+            Intent intentOpen=new Intent(context, PlayerActivity.class);
+            intentOpen.putExtra("position",-1);
+            intentOpen.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            PendingIntent pendingWholeClick = PendingIntent.getActivity(context, 0,
+                    intentOpen, PendingIntent.FLAG_UPDATE_CURRENT);
+
+
+
+            //create notifcation
+            notification = new NotificationCompat.Builder(context, CHANNEL_ID)
+                    .setSmallIcon(R.drawable.music_player)
+                    .setContentTitle(songDetails.getSongTitle())
+                    .setContentText(songDetails.getSongDesc())
+                    .setContentIntent(pendingWholeClick)
+                    .setAutoCancel(true)
+                    .setLargeIcon(bm)
+                    .setOnlyAlertOnce(true)
+                    .setShowWhen(false)
+                    .addAction(drw_prvs, "Previous", pendingIntentPrevious)
+                    .addAction(drw_play, "Play", pendingIntentPlay)
+                    .addAction(drw_next, "Next", pendingIntentNext)
+                    .setStyle(new androidx.media.app.NotificationCompat.MediaStyle()
+                            .setShowActionsInCompactView(0, 1, 2)
+                            .setMediaSession(mediaSessionCompat.getSessionToken()))
+                    .setPriority(NotificationCompat.PRIORITY_LOW)
+                    .build();
+
+            notificationManagerCompat.notify(1, notification);
+        }
     }
 
     public boolean isMediaPlaying() {

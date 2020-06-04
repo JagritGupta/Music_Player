@@ -2,6 +2,7 @@ package com.example.myplayer;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.SearchView;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -25,7 +26,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
-import android.widget.SearchView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -153,6 +153,7 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
         switch (menuType) {
             case "Festival Songs":
                 Toast.makeText(MainActivity.this, "FESTIVAL SONGS", Toast.LENGTH_SHORT).show();
+                typeOfPlaylist = "Festival";
 
                 songsList = fetchFestivalFromDB();
 
@@ -181,6 +182,8 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
                 pos = 0;
                 songFavMap = new HashMap<>();
                 //fetchFavouriteSongs();
+                typeOfPlaylist = "Downloads";
+
                 songsList = new ArrayList<>();
                 songsList = fetchDownloadFromDB();
 
@@ -230,6 +233,7 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
     }
 
 
+    //Feature of search in song Recycler view
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
@@ -252,47 +256,63 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
     public boolean onQueryTextChange(String newText) {
         songsFilterList = new ArrayList<>();
 
-        if (newText == null || newText.length() == 0) {
+        if (newText == null || newText.length() == 0 || newText == "") {
             noSongsFound.setVisibility(View.GONE);
             songsFilterList.addAll(songsList);
             musicLibraryAdapter.updateList(songsFilterList);
 
-        }
-        String filterPattern = newText.toLowerCase().trim();
-        for (int i = 0; i < songsList.size(); i++) {
-            SongDetails item = Utility.songsList.get(i);
-            String songTitle = item.songTitle.toLowerCase().trim();
-            Boolean check = songTitle.contains(filterPattern);
-            if (check) {
-                noSongsFound.setVisibility(View.GONE);
-                songsFilterList.add(songsList.get(i));
-                Toast.makeText(this, item.songTitle, Toast.LENGTH_SHORT).show();
-            } else {
-                noSongsFound.setVisibility(View.VISIBLE);
+        } else {
+            String filterPattern = newText.toLowerCase().trim();
+            songsList = (ArrayList<SongDetails>) getTheSongList();
+            for (int i = 0; i < songsList.size(); i++) {
+                SongDetails item = songsList.get(i);
+                String songTitle = item.songTitle.toLowerCase().trim();
+                Boolean check = songTitle.contains(filterPattern);
+                if (check) {
+                    songsFilterList.add(songsList.get(i));
+                }
             }
         }
-        if (songsFilterList != null) {
+        if (songsFilterList.size() != 0) {
             musicLibraryAdapter.updateList(songsFilterList);
+        } else {
+            songsFilterList = new ArrayList<>();  //bcz in this case no song is matched
+            musicLibraryAdapter.updateList(songsFilterList);
+            noSongsFound.setVisibility(View.VISIBLE);
         }
         return true;
     }
 
+    public List<SongDetails> getTheSongList() {   //This function has ensured us that the list used by "SEARCH IN RECYLERVIEW" is receiving the actual list every time
+        switch (typeOfPlaylist) {
+            case "Festival":
+                return roomService.fetchFestivals();
+            case "Favourites":
+                return roomService.fetchFavourites();
+            case "Downloads":
+                return roomService.fetchDownloads();
+            case "All Songs":
+                return roomService.fetchAllSongs();
 
-
-    //Feature of delete item on Swipe in the Favourite Options
-    ItemTouchHelper.SimpleCallback itemTouchHelperCallback = new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.RIGHT | ItemTouchHelper.LEFT) {
-        @Override
-        public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
-            return false;
         }
+        return null;
+    }
 
-        @Override
-        public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
-            SongDetails songDetails = songsList.get(viewHolder.getAdapterPosition());
-            roomService.deleteSong(songDetails);
-            songsList.remove(songDetails);
-            Utility.setSongsList(songsList);
-            musicLibraryAdapter.notifyDataSetChanged();
-        }
-    };
-}
+
+        //Feature of delete item on Swipe in the Favourite Options
+        ItemTouchHelper.SimpleCallback itemTouchHelperCallback = new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.RIGHT | ItemTouchHelper.LEFT) {
+            @Override
+            public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
+                return false;
+            }
+
+            @Override
+            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+                SongDetails songDetails = songsList.get(viewHolder.getAdapterPosition());
+                roomService.deleteSong(songDetails);
+                songsList.remove(songDetails);
+                Utility.setSongsList(songsList);
+                musicLibraryAdapter.notifyDataSetChanged();
+            }
+        };
+    }
