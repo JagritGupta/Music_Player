@@ -58,7 +58,6 @@ public class MainMenu extends AppCompatActivity {
         downloads = findViewById(R.id.downloads);
         allSongs = findViewById(R.id.allSongs);
 
-
     }
 
 
@@ -172,20 +171,34 @@ public class MainMenu extends AppCompatActivity {
                     fetchDownloadSongs(singleFile);
                 } else {
                     try {
-                        if (singleFile.getName().endsWith(".mp3") || singleFile.getName().endsWith(".wav") || singleFile.getName().endsWith(".m4a")) {
+                        if ((singleFile.getName().endsWith(".mp3") || singleFile.getName().endsWith(".wav") || singleFile.getName().endsWith(".m4a"))) {
 
                             String path = singleFile.getPath();
                             MediaMetadataRetriever metaRetriver = new MediaMetadataRetriever();
                             metaRetriver.setDataSource(path);
+                            Log.d("SONGS", String.valueOf(singleFile.length()));
+
                             String albumName = metaRetriver.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM);
+                            Log.d("NAMESS", albumName);
+                            if(albumName==null|| albumName==""){
+                                albumName="Unknown Song";
+                            }
+
                             String artistName = metaRetriver.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST);
+                            if(artistName.length()<=0){
+                                artistName="Unknown artist";
+                            }
+
                             byte[] albumArt = metaRetriver.getEmbeddedPicture();
+
                             SongDetails singleSong = new SongDetails(albumName, artistName, albumArt);
                             singleSong.setPath(path);
                             singleSong.setPosition(pos);
                             pos++;
                             singleSong.setPlaylistType("Downloads");
-                            insertIntoDB(singleSong);
+                            if(albumName.length()>0) {
+                                insertIntoDB(singleSong);
+                            }
                         }
                     } catch (Exception e) {
                         Log.d("Offoo", "Error");
