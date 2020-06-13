@@ -82,13 +82,15 @@ public class MusicLibraryAdapter extends RecyclerView.Adapter<MusicLibraryAdapte
         if (songDetails.playlistType.equalsIgnoreCase("Festival")) {
             holder.songTitle.setText(songDetails.getSongTitle());
             holder.songDesc.setText(songDetails.getSongDesc());
-            holder.songImage.setImageResource(R.drawable.music_player);
+            //holder.songImage.setImageResource(R.drawable.music_player);
         }
         else if (songDetails.playlistType.equalsIgnoreCase("Downloads")) {
             holder.songTitle.setText(songDetails.getSongTitle());
             holder.songDesc.setText(songDetails.getSongDesc());
-            /*Bitmap bm = BitmapFactory.decodeByteArray(songDetails.songAlbumArt, 0, songDetails.songAlbumArt.length);
-            holder.songImage.setImageBitmap(bm);*/
+            if(songDetails.songAlbumArt!=null && songDetails.songAlbumArt.length>0){
+                Bitmap bm = BitmapFactory.decodeByteArray(songDetails.songAlbumArt, 0, songDetails.songAlbumArt.length);
+                holder.songImage.setImageBitmap(bm);
+            }
         }
 
         if (songDetails.isFavourite()) {

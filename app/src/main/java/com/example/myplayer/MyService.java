@@ -73,13 +73,15 @@ public class MyService extends Service {
             public void onCallStateChanged(int state, String incomingNumber) {
                 if (state == TelephonyManager.CALL_STATE_RINGING) {
                     if(mediaPlayer!=null && mediaPlayer.isPlaying()){
-                        mediaPlayer.pause();
+                        pausePlaying();
                     }
-                } else if(state == TelephonyManager.CALL_STATE_IDLE) {
-                    //Not in call: Play music
-                } else if(state == TelephonyManager.CALL_STATE_OFFHOOK) {
-                    //A call is dialing, active or on hold
                 }
+                else if(state == TelephonyManager.CALL_STATE_IDLE) {
+                    pausePlaying();
+                }
+                else if(state == TelephonyManager.CALL_STATE_OFFHOOK) {
+                }
+
                 super.onCallStateChanged(state, incomingNumber);
             }
         };
@@ -162,30 +164,34 @@ public class MyService extends Service {
     public void pausePlaying() {
         Log.e("Calling", "I PAUSE PLAY");
 
-        if(MainActivity.isMainActivityVisible && mediaPlayer.isPlaying())
-            MainActivity.miniPlayPauseBtn.setImageResource(R.drawable.play_btn);
+        if(mediaPlayer!=null){
 
-        else if(MainActivity.isMainActivityVisible && !mediaPlayer.isPlaying())
-            MainActivity.miniPlayPauseBtn.setImageResource(R.drawable.pause_btn);
+            if(MainActivity.isMainActivityVisible && mediaPlayer.isPlaying())
+                MainActivity.miniPlayPauseBtn.setImageResource(R.drawable.play_btn);
 
-
-        if (mediaPlayer.isPlaying()) {
-            mediaPlayer.pause();
-            isPlaying = false;
+            else if(MainActivity.isMainActivityVisible && !mediaPlayer.isPlaying())
+                MainActivity.miniPlayPauseBtn.setImageResource(R.drawable.pause_btn);
 
 
-        } else {
-            isPlaying = true;
-            mediaPlayer.start();
+            if (mediaPlayer.isPlaying()) {
+                mediaPlayer.pause();
+                isPlaying = false;
+
+
+            } else {
+                isPlaying = true;
+                mediaPlayer.start();
+            }
+
+            createNotification(MyService.this, songDetails, isPlaying);
         }
-
-        createNotification(MyService.this, songDetails, isPlaying);
     }
 
     public void playNextSong() {
 
         Log.e("Calling", "I NEXT CALLED");
         recyclerViewPosition = (recyclerViewPosition + 1) % songsList.size();
+        Log.d("PLAYINGS", String.valueOf(recyclerViewPosition));
         songDetails = songsList.get(recyclerViewPosition);
         playMedia(recyclerViewPosition);
         if (MainActivity.isMainActivityVisible)
@@ -298,7 +304,7 @@ public class MyService extends Service {
 
             //create notifcation
             notification = new NotificationCompat.Builder(context, CHANNEL_ID)
-                    .setSmallIcon(R.drawable.music_player)
+                    .setSmallIcon(R.drawable.player_logo_icon)
                     .setContentTitle(songDetails.getSongTitle())
                     .setContentText(songDetails.getSongDesc())
                     .setContentIntent(pendingWholeClick)

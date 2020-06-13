@@ -18,6 +18,7 @@
         android:layout_alignParentRight="true"
         android:layout_margin="10dp"
         android:layout_marginTop="5dp"
+        android:layout_marginBottom="5dp"
         android:elevation="100dp"
         app:srcCompat="@drawable/favvunfilled" />
 
@@ -32,7 +33,6 @@
         android:layout_marginTop="11dp"
         android:layout_marginEnd="10dp"
         android:layout_marginRight="16dp"
-        android:visibility="gone"
         android:layout_marginBottom="10dp"
         android:elevation="100dp"
         app:srcCompat="@drawable/favfilled" />
@@ -50,7 +50,8 @@
             android:id="@+id/playSong_image"
             android:layout_width="322dp"
             android:layout_height="299dp"
-            android:src="@drawable/music_player" />
+            android:background="#f5f5f5"
+            android:src="@drawable/player_logo_icon" />
 
         <TextView
             android:id="@+id/song_name_label"
@@ -80,6 +81,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_above="@id/timer_layout"
+
         android:layout_marginTop="50dp"
         android:padding="5dp">
 

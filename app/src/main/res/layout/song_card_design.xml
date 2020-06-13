@@ -20,16 +20,13 @@
                 android:layout_height="wrap_content"
                 android:layout_toLeftOf="@id/favUnfilled"
                 android:paddingLeft="10dp"
-                android:paddingBottom="10dp"
-                android:paddingTop="10dp"
-
-                >
+                android:paddingTop="7dp">
 
                 <ImageView
                     android:id="@+id/songImage"
-                    android:layout_width="52dp"
-                    android:layout_height="56dp"
-                    android:src="@drawable/music_player"
+                    android:layout_width="57dp"
+                    android:layout_height="57dp"
+                    android:src="@drawable/player_logo_icon"
                     />
 
                 <TextView
@@ -37,31 +34,33 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginLeft="6dp"
+                    android:layout_toRightOf="@id/songImage"
                     android:ellipsize="end"
+                    android:fontFamily="sans-serif-medium"
                     android:gravity="center_vertical"
                     android:marqueeRepeatLimit="marquee_forever"
                     android:maxLines="1"
                     android:padding="5dp"
                     android:text="Malang Title Track Single"
                     android:textColor="@color/colorPrimaryDark"
-                    android:layout_toRightOf="@id/songImage"
                     android:textSize="18dp"
-                    android:textStyle="bold"/>
+                    android:textStyle="bold" />
 
                 <TextView
                     android:id="@+id/songDesc"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_below="@id/songTitle"
+                    android:layout_toRightOf="@id/songImage"
                     android:ellipsize="end"
+                    android:fontFamily="sans-serif"
                     android:marqueeRepeatLimit="marquee_forever"
                     android:maxLines="1"
                     android:paddingLeft="15dp"
                     android:text="Sample Display Song name"
                     android:textColor="@color/colorPrimary"
-                    android:layout_toRightOf="@id/songImage"
-                    android:layout_below="@id/songTitle"
                     android:textSize="13dp"
-                    android:textStyle="italic"/>
+                    android:textStyle="italic" />
 
                 <ImageView
                     android:id="@+id/favourites"
@@ -92,7 +91,15 @@
                 android:layout_alignParentRight="true"
                 android:visibility="gone"
                 app:srcCompat="@drawable/favfilled" />
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/item_song_layout"
+                android:maxLines="1"
+                android:textColor="#92A8A5"
+                android:text="________________________________________________________________"/>
         </RelativeLayout>
+
 
 
 

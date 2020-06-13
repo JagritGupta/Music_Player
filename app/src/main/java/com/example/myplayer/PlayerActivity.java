@@ -255,10 +255,12 @@ public class PlayerActivity extends AppCompatActivity {
         seekBar.getThumb().setColorFilter(getResources().getColor(R.color.colorPrimaryDark), PorterDuff.Mode.SRC_IN);
 
         if (songDetails.playlistType.equalsIgnoreCase("Festival")) {
-            playSongImage.setImageResource(R.drawable.music_player);
+            //playSongImage.setImageResource(R.drawable.music_player);
         } else if (songDetails.playlistType.equalsIgnoreCase("Downloads")) {
-            Bitmap bm = BitmapFactory.decodeByteArray(songDetails.songAlbumArt, 0, songDetails.songAlbumArt.length);
-            playSongImage.setImageBitmap(bm);
+            if(songDetails.songAlbumArt!=null && songDetails.songAlbumArt.length>0) {
+                Bitmap bm = BitmapFactory.decodeByteArray(songDetails.songAlbumArt, 0, songDetails.songAlbumArt.length);
+                playSongImage.setImageBitmap(bm);
+            }
         }
 
         if (songDetails.isFavourite()) {

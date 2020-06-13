@@ -177,8 +177,9 @@ public class MainMenu extends AppCompatActivity {
                             MediaMetadataRetriever metaRetriver = new MediaMetadataRetriever();
                             metaRetriver.setDataSource(path);
                             Log.d("SONGS", String.valueOf(singleFile.length()));
-
-                            String albumName = metaRetriver.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM);
+                            String albumName=singleFile.getName();
+                            albumName=albumName.replace(".mp3","");
+                            //String albumName = metaRetriver.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM);
                             Log.d("NAMESS", albumName);
                             if(albumName==null|| albumName==""){
                                 albumName="Unknown Song";
@@ -196,7 +197,7 @@ public class MainMenu extends AppCompatActivity {
                             singleSong.setPosition(pos);
                             pos++;
                             singleSong.setPlaylistType("Downloads");
-                            if(albumName.length()>0) {
+                            if(albumArt!=null && albumArt.length>0) {
                                 insertIntoDB(singleSong);
                             }
                         }

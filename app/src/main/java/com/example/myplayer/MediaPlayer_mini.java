@@ -11,6 +11,9 @@ public class MediaPlayer_mini extends AppCompatActivity {
     TextView songLabel,songDesc;
     SongDetails songDetails;
 
+    public MediaPlayer_mini() {
+    }
+
     public MediaPlayer_mini(SongDetails songDetails) {
         this.songDetails = songDetails;
     }

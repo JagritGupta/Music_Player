@@ -34,7 +34,7 @@ public class CreateNotification {
 
 
             if (songDetails.playlistType.equalsIgnoreCase("Festival")) {
-                bm = BitmapFactory.decodeResource(context.getResources(), R.drawable.music_player);
+                bm = BitmapFactory.decodeResource(context.getResources(), R.drawable.player_logo_icon);
             } else if(songDetails.playlistType.equalsIgnoreCase("Downloads")) {
                 bm = BitmapFactory.decodeByteArray(songDetails.songAlbumArt, 0, songDetails.songAlbumArt.length);
             }
@@ -78,7 +78,7 @@ public class CreateNotification {
 
             //create notifcation
             notification = new NotificationCompat.Builder(context, CHANNEL_ID)
-                    .setSmallIcon(R.drawable.music_player)
+                    .setSmallIcon(R.drawable.player_logo_icon)
                     .setContentTitle(songDetails.getSongTitle())
                     .setContentText(songDetails.getSongDesc())
                     .setContentIntent(pendingWholeClick)

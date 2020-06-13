@@ -6,20 +6,11 @@ import androidx.appcompat.widget.SearchView;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
-import android.annotation.SuppressLint;
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
-import android.content.pm.ActivityInfo;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
 import android.os.Bundle;
-import android.os.Environment;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -28,16 +19,9 @@ import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import java.io.File;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-
-import static com.example.myplayer.CONSTANTS.ACTION_PAUSE;
-import static com.example.myplayer.CONSTANTS.ACTION_PLAY;
-import static java.util.Collections.sort;
 
 public class MainActivity extends AppCompatActivity implements SearchView.OnQueryTextListener {
     RecyclerView recyclerView;
@@ -130,7 +114,7 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
             }
 
             if (songDetails.playlistType.equalsIgnoreCase("Festival")) {
-                miniSongImg.setImageResource(R.drawable.music_player);
+
             } else {
                 Bitmap bm = BitmapFactory.decodeByteArray(songDetails.songAlbumArt, 0, songDetails.songAlbumArt.length);
                 miniSongImg.setImageBitmap(bm);
