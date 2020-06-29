@@ -8,6 +8,9 @@ import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity(tableName = "songsDB")
 public class SongDetails implements Parcelable {
 
@@ -22,9 +25,11 @@ public class SongDetails implements Parcelable {
     @ColumnInfo(name = "songAlbumArt")
     byte[] songAlbumArt;
 
-    @ColumnInfo(name = "playlistType")
-    String playlistType;
+    @ColumnInfo(name = "playerType")
+    String playerType;          //Player type can be either Downloads or Festival bcz way of playing is diff for both
 
+    @ColumnInfo(name = "typeOfPlaylist")
+    String typeOfPlaylist="";  //Type of playlist can be anything created by the user
 
     @ColumnInfo(name = "position")
     int position = -1;    //position variable is used for playing Festival songs
@@ -33,7 +38,7 @@ public class SongDetails implements Parcelable {
     @NonNull
     String songPath;      //songPath variable is used for playing Download songs
 
-    boolean isFavourite;
+    boolean isFavourite=false;
 
     public SongDetails(String songTitle, String songDesc, byte[] songAlbumArt) {
         this.songTitle = songTitle;
@@ -72,8 +77,8 @@ public class SongDetails implements Parcelable {
         return songID;
     }
 
-    public String getPlaylistType() {
-        return playlistType;
+    public String getPlayerType() {
+        return playerType;
     }
 
     public boolean isFavourite() {
@@ -83,6 +88,8 @@ public class SongDetails implements Parcelable {
     public String getPath() {
         return songPath;
     }
+
+
 
     public void setPath(String songPath) {
         this.songPath = songPath;
@@ -112,9 +119,26 @@ public class SongDetails implements Parcelable {
         this.songID = songID;
     }
 
+    public String getTypeOfPlaylist() {
+        return typeOfPlaylist;
+    }
 
-    public void setPlaylistType(String playlistType) {
-        this.playlistType = playlistType;
+    @NonNull
+    public String getSongPath() {
+        return songPath;
+    }
+
+    public void setTypeOfPlaylist(String typeOfPlaylist) {
+        this.typeOfPlaylist = typeOfPlaylist;
+    }
+
+    public void setSongPath(@NonNull String songPath) {
+        this.songPath = songPath;
+    }
+
+
+    public void setPlayerType(String playerType) {
+        this.playerType = playerType;
     }
 
 
@@ -127,7 +151,7 @@ public class SongDetails implements Parcelable {
         songTitle = in.readString();
         songDesc = in.readString();
         songAlbumArt = in.createByteArray();
-        playlistType = in.readString();
+        playerType = in.readString();
         position = in.readInt();
         songPath = in.readString();
         isFavourite = in.readByte() != 0;
@@ -158,7 +182,7 @@ public class SongDetails implements Parcelable {
         dest.writeString(songTitle);
         dest.writeString(songDesc);
         dest.writeByteArray(songAlbumArt);
-        dest.writeString(playlistType);
+        dest.writeString(playerType);
         dest.writeInt(position);
         dest.writeString(songPath);
         dest.writeByte((byte) (isFavourite ? 1 : 0));

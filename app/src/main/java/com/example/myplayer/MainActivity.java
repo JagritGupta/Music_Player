@@ -6,6 +6,7 @@ import androidx.appcompat.widget.SearchView;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -19,6 +20,7 @@ import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -38,10 +40,10 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
     static MyService myService;
     public static boolean isMainActivityVisible = false;
     private final int[] festivalSongsList = {R.raw.aa_aaye_navratre_ambe_maa, R.raw.jai_jaikaar_sukhwinder_singh, R.raw.lali_lali_laal_chunariya, R.raw.navraton_mein_ghar_mere_aayi};
-
+    Boolean isDeleteMenuOptionAvailable=false;
     static SongDetails songDetails;
     String menuType, typeOfPlaylist;
-
+    Intent i;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,9 +55,10 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
         noSongsFound = findViewById(R.id.noDataFound);
         songDetails = new SongDetails();
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        Intent i = getIntent();
+        i = getIntent();
         menuType = i.getStringExtra("type");
         songsList = displaySongsInArrayList(menuType);
+        Utility.setSongsList(songsList);
         myService = MainMenu.myService;
         Utility.setFestivalList(festivalSongsList);
         miniPlayerLayout = findViewById(R.id.mini_mediaPlayer);
@@ -64,8 +67,7 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
         miniSongDesc = findViewById(R.id.song_description);
         miniSongTitle = findViewById(R.id.song_name);
         miniSongImg = findViewById(R.id.song_imageView);
-        Utility.setSongsList(songsList);
-        musicLibraryAdapter = new MusicLibraryAdapter(this, songsList, typeOfPlaylist, getApplication());
+        musicLibraryAdapter = new MusicLibraryAdapter(this, songsList,getSupportFragmentManager(), getApplication(), MainActivity.this, "SongPlayer",isDeleteMenuOptionAvailable);
         recyclerView.setAdapter(musicLibraryAdapter);
 
 
@@ -100,6 +102,8 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
         isMainActivityVisible = false;
     }
 
+
+
     public static void miniPlayerAccess() {
         MediaPlayer mediaPlayer = myService.getMediaPlayer();
         if (mediaPlayer != null) {
@@ -113,7 +117,7 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
                 miniPlayPauseBtn.setImageResource(R.drawable.play_btn);
             }
 
-            if (songDetails.playlistType.equalsIgnoreCase("Festival")) {
+            if (songDetails.playerType.equalsIgnoreCase("Festival")) {
 
             } else {
                 Bitmap bm = BitmapFactory.decodeByteArray(songDetails.songAlbumArt, 0, songDetails.songAlbumArt.length);
@@ -136,9 +140,8 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
         roomService = new RoomService(getApplication());
         switch (menuType) {
             case "Festival Songs":
-                Toast.makeText(MainActivity.this, "FESTIVAL SONGS", Toast.LENGTH_SHORT).show();
                 typeOfPlaylist = "Festival";
-
+                isDeleteMenuOptionAvailable=false;
                 songsList = fetchFestivalFromDB();
 
                 if (songsList.size() == 0) {
@@ -148,13 +151,11 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
                 return songsList;
 
             case "Favourites":
-                Toast.makeText(MainActivity.this, "Your favourites", Toast.LENGTH_SHORT).show();
                 songFavMap = new HashMap<String, String>();
                 new ItemTouchHelper(itemTouchHelperCallback).attachToRecyclerView(recyclerView);   //Enables swipe to delete feature
                 songsList = fetchFavouritesFromDB();
                 typeOfPlaylist = "Favourites";
-
-
+                isDeleteMenuOptionAvailable=false;
                 if (songsList.size() == 0) {
                     recyclerView.setVisibility(View.GONE);
                     noSongsFound.setVisibility(View.VISIBLE);
@@ -162,12 +163,10 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
                 return songsList;
 
             case "Downloads":
-                Toast.makeText(MainActivity.this, "Downloads", Toast.LENGTH_SHORT).show();
                 pos = 0;
                 songFavMap = new HashMap<>();
-                //fetchFavouriteSongs();
                 typeOfPlaylist = "Downloads";
-
+                isDeleteMenuOptionAvailable=false;
                 songsList = new ArrayList<>();
                 songsList = fetchDownloadFromDB();
 
@@ -178,8 +177,7 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
                 return songsList;
 
             case "AllSongs":
-                Toast.makeText(MainActivity.this, "ALL SONGS", Toast.LENGTH_SHORT).show();
-
+                isDeleteMenuOptionAvailable=false;
                 songsList = fetchAllSongsFromDB();
 
                 typeOfPlaylist = "All Songs";
@@ -187,6 +185,11 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
                     recyclerView.setVisibility(View.GONE);
                     noSongsFound.setVisibility(View.VISIBLE);
                 }
+                return songsList;
+
+            case "PLAYLISTS":
+                isDeleteMenuOptionAvailable=true;       //This should only be true in Playlist bcz this app doesnt support deletion from DB
+                songsList=i.getParcelableArrayListExtra("songsList");
                 return songsList;
         }
         return null;
@@ -283,20 +286,22 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
     }
 
 
-        //Feature of delete item on Swipe in the Favourite Options
-        ItemTouchHelper.SimpleCallback itemTouchHelperCallback = new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.RIGHT | ItemTouchHelper.LEFT) {
-            @Override
-            public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
-                return false;
-            }
+    //Feature of delete item on Swipe in the Favourite Options
+    ItemTouchHelper.SimpleCallback itemTouchHelperCallback = new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.RIGHT | ItemTouchHelper.LEFT) {
+        @Override
+        public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
+            return false;
+        }
 
-            @Override
-            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
-                SongDetails songDetails = songsList.get(viewHolder.getAdapterPosition());
-                roomService.deleteSong(songDetails);
-                songsList.remove(songDetails);
-                Utility.setSongsList(songsList);
-                musicLibraryAdapter.notifyDataSetChanged();
-            }
-        };
-    }
+        @Override
+        public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+            SongDetails songDetails = songsList.get(viewHolder.getAdapterPosition());
+            roomService.deleteSong(songDetails);
+            songsList.remove(songDetails);
+            Utility.setSongsList(songsList);
+            musicLibraryAdapter.notifyDataSetChanged();
+        }
+    };
+
+
+}

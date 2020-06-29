@@ -6,7 +6,7 @@ import androidx.room.Database;
 import androidx.room.RoomDatabase;
 import androidx.room.Room;
 
-@Database(entities = {SongDetails.class}, version = 4)
+@Database(entities = {SongDetails.class}, version = 5)
 public abstract class SongRoomDatabase extends RoomDatabase {
     public abstract DAO dao();
 
@@ -18,6 +18,7 @@ public abstract class SongRoomDatabase extends RoomDatabase {
                 if (roomDatabaseInstance == null) {
                     roomDatabaseInstance = Room.databaseBuilder(context,
                             SongRoomDatabase.class, "songsList")
+                            .fallbackToDestructiveMigration()
                             .build();
                 }
             }

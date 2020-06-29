@@ -14,7 +14,6 @@ public class RoomService {
         roomDB= SongRoomDatabase.getDatabase(context);
     }
 
-
     public void insert(SongDetails songDetails) {
         new InsertAsyncTask().execute(songDetails);
     }
@@ -50,6 +49,17 @@ public class RoomService {
         return null;
     }
 
+    public List<String> getAllPlaylists(){
+        try {
+            return new GetPlaylistsAsyncTask().execute().get();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
 
 
     public List<SongDetails> fetchDownloads() {
@@ -75,6 +85,25 @@ public class RoomService {
         return null;
     }
 
+    public void setPlaylistName(String playlistName,String songPath) {
+        try {
+            new SetPlaylistNameAsyncTask(playlistName,songPath).execute().get();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    public List<SongDetails> getSongsFromPlaylist(String playlistName) {
+        try {
+            return new GetSongsFromPlaylists(playlistName).execute().get();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+
+    }
+
     private class InsertAsyncTask extends AsyncTask<SongDetails, Void, Void> {
         public InsertAsyncTask() {
         }
@@ -92,8 +121,33 @@ public class RoomService {
 
         @Override
         protected Void doInBackground(SongDetails... songsList) {
-            roomDB.dao().setToFavInDB(songsList[0]);
+            roomDB.dao().updateDB(songsList[0]);
             return null;
+        }
+    }
+
+    private class SetPlaylistNameAsyncTask<playlistName> extends AsyncTask<Object,Void,Void>{
+
+        String playlistName;
+        String songPath;
+
+        public SetPlaylistNameAsyncTask(String playlistName, String songPath) {
+            this.playlistName = playlistName;
+            this.songPath = songPath;
+        }
+
+        @Override
+        protected Void doInBackground(Object... objects) {
+            roomDB.dao().setPlaylistName(playlistName,songPath);
+            return null;
+        }
+    }
+
+    private class GetPlaylistsAsyncTask extends AsyncTask<Void,Void,List<String>>{
+
+        @Override
+        protected List<String> doInBackground(Void... voids) {
+            return roomDB.dao().getAllPlaylists();
         }
     }
 
@@ -122,6 +176,20 @@ public class RoomService {
         @Override
         protected List<SongDetails> doInBackground(Void... voids) {
             return roomDB.dao().getAllSongs();
+        }
+    }
+
+    private class GetSongsFromPlaylists extends AsyncTask<String, Void, List<SongDetails>> {
+
+        String playlistName;
+
+        public GetSongsFromPlaylists(String playlistName) {
+            this.playlistName = playlistName;
+        }
+
+        @Override
+        protected List<SongDetails> doInBackground(String... strings) {
+            return roomDB.dao().getSongsFromPlaylist(playlistName);
         }
     }
 

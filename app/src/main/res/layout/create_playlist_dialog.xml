@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/linear_create"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+
+    <TableRow
+        android:id="@+id/table_row"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <EditText
+        android:id="@+id/new_playlist_box"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:maxLines="1"
+        android:maxLength="25"
+        android:layout_margin="20dp"
+        android:hint="Enter Name"/>
+
+    <!--<Button
+        android:id="@+id/createBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="CREATE"
+        android:textStyle="bold"
+        android:fontFamily="@font/amaranth"
+        android:layout_marginBottom="10dp"
+        android:textSize="20dp"
+        android:background="@drawable/square_edge_curve"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@id/new_playlist_box"/>-->
+
+</LinearLayout>

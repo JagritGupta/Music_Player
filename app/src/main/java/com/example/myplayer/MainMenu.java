@@ -7,19 +7,10 @@ import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.media.MediaMetadataRetriever;
-import android.media.session.MediaController;
-import android.media.session.MediaSession;
-import android.media.session.PlaybackState;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.IBinder;
-import android.os.SystemClock;
-import android.provider.ContactsContract;
-import android.support.v4.media.session.MediaSessionCompat;
-import android.support.v4.media.session.PlaybackStateCompat;
 import android.util.Log;
-import android.view.ActionMode;
 import android.view.View;
 import android.widget.TextView;
 
@@ -32,8 +23,6 @@ import com.karumi.dexter.listener.single.PermissionListener;
 
 import java.io.File;
 import java.lang.reflect.Field;
-
-import javax.security.auth.callback.Callback;
 
 public class MainMenu extends AppCompatActivity {
 
@@ -80,9 +69,6 @@ public class MainMenu extends AppCompatActivity {
                         serviceIntent = new Intent(getApplicationContext(), MyService.class);
                         serviceIntent.putExtra("SongPos", 0);
                         serviceIntent.putExtra("ReadyToPlay", false);
-                        /*if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                            startForegroundService(serviceIntent);
-                        }*/
                         startService(serviceIntent);
                         bindMyService();
 
@@ -102,8 +88,8 @@ public class MainMenu extends AppCompatActivity {
                             @Override
                             public void onClick(View v) {
 
-                                Intent i = new Intent(MainMenu.this, MainActivity.class);
-                                i.putExtra("type", "Favourites");
+                                Intent i = new Intent(MainMenu.this, PlaylistActivity.class);
+                                i.putExtra("type", "MY PLAYLISTS");
                                 i.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
                                 startActivity(i);
 
@@ -145,22 +131,21 @@ public class MainMenu extends AppCompatActivity {
                 }).check();
     }
 
+
+
     public void fetchFestivalSongs() {
         Field[] fields = R.raw.class.getFields();
         for (int i = 0; i < fields.length; i++) {
             String songName = fields[i].getName().replace("_", " ");
             SongDetails singleSong = new SongDetails(songName, "ArtistName");
-            singleSong.setPlaylistType("Festival");
+            singleSong.setPlayerType("Festival");
             singleSong.setPosition(i);
             singleSong.setPath(Integer.toString(festivalSongsList[i]));
-
+            singleSong.setIsFavourite(false);
             insertIntoDB(singleSong);
         }
     }
 
-    public void fetchFavouriteSongs() {
-
-    }
 
     public void fetchDownloadSongs(File file) {
 
@@ -176,10 +161,8 @@ public class MainMenu extends AppCompatActivity {
                             String path = singleFile.getPath();
                             MediaMetadataRetriever metaRetriver = new MediaMetadataRetriever();
                             metaRetriver.setDataSource(path);
-                            Log.d("SONGS", String.valueOf(singleFile.length()));
                             String albumName=singleFile.getName();
                             albumName=albumName.replace(".mp3","");
-                            //String albumName = metaRetriver.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM);
                             Log.d("NAMESS", albumName);
                             if(albumName==null|| albumName==""){
                                 albumName="Unknown Song";
@@ -195,8 +178,9 @@ public class MainMenu extends AppCompatActivity {
                             SongDetails singleSong = new SongDetails(albumName, artistName, albumArt);
                             singleSong.setPath(path);
                             singleSong.setPosition(pos);
+                            singleSong.setIsFavourite(false);
                             pos++;
-                            singleSong.setPlaylistType("Downloads");
+                            singleSong.setPlayerType("Downloads");
                             if(albumArt!=null && albumArt.length>0) {
                                 insertIntoDB(singleSong);
                             }

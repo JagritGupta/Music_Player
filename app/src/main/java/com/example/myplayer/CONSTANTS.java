@@ -2,11 +2,10 @@ package com.example.myplayer;
 
 public class CONSTANTS {
 
-    public static final String ACTION_PAUSE = "actionpause";
-    public static final String ACTION_PLAY = "actionplay";
-    public static final String ACTION_NEXT = "actionnext";
-    public static final String ACTION_PREVIOUS = "actionprevious";
-    public static final String ACTION_RESUME = "actionresume";
+    public static final int MENU_CREATE_NEW= 1;
+    public static final int MENU_SAVE_TO_PLAYLIST= 2;
+    public static final int MENU_DELETE= 3;
+
 
 
 }

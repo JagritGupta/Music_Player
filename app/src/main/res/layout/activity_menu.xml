@@ -15,7 +15,7 @@
         android:layout_margin="12dp"
         android:layout_weight="5"
         android:background="@drawable/blue_smoke"
-        android:text="Festival Songs"
+        android:text="Retro Bollywood "
         style="@style/MenuTheme"
         />
 
@@ -28,7 +28,7 @@
         android:layout_marginBottom="12dp"
         android:layout_weight="5"
         android:background="@drawable/red_smoke"
-        android:text="My Favourites"
+        android:text="My Playlists"
         style="@style/MenuTheme"
         />
     />

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/add_to_playlist"
+        android:title="Add To Playlist" />
+    <item
+        android:id="@+id/delete_song_from_playlist"
+        android:title="Delete this Song"
+        android:visible="false"/>
+
+    <item
+        android:id="@+id/delete_playlist"
+        android:title="Delete Playlist"
+        android:visible="false"/>
+<!--    <item
+        android:id="@+id/rename_playlist"
+        android:title="Rename Playlist"
+        android:visible="false"/>-->
+
+</menu>

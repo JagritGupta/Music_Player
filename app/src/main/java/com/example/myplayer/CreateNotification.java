@@ -9,7 +9,6 @@ import android.graphics.BitmapFactory;
 import android.os.Build;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.util.Log;
-import android.widget.Toast;
 
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
@@ -33,9 +32,9 @@ public class CreateNotification {
             MediaSessionCompat mediaSessionCompat = new MediaSessionCompat(context, "tag");
 
 
-            if (songDetails.playlistType.equalsIgnoreCase("Festival")) {
+            if (songDetails.playerType.equalsIgnoreCase("Festival")) {
                 bm = BitmapFactory.decodeResource(context.getResources(), R.drawable.player_logo_icon);
-            } else if(songDetails.playlistType.equalsIgnoreCase("Downloads")) {
+            } else if(songDetails.playerType.equalsIgnoreCase("Downloads")) {
                 bm = BitmapFactory.decodeByteArray(songDetails.songAlbumArt, 0, songDetails.songAlbumArt.length);
             }
 

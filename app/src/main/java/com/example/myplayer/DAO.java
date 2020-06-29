@@ -20,18 +20,26 @@ public interface DAO {
     @Query("SELECT * FROM songsDB where isFavourite='1'")   //1 implies true in SQL
     List<SongDetails> getAllFavSongs();
 
-    @Query("SELECT * FROM songsDB where playlistType='Downloads'")
+    @Query("SELECT * FROM songsDB where playerType='Downloads'")
     List<SongDetails> getAllDownloads();
 
-    @Query("SELECT * FROM songsDB where playlistType='Festival'")
+    @Query("SELECT * FROM songsDB where playerType='Festival'")
     List<SongDetails> getAllFestival();
 
     @Query("SELECT * FROM songsDB ORDER BY songName ASC")
     List<SongDetails> getAllSongs();
 
+    @Query("UPDATE songsDB SET typeOfPlaylist=:playlistName where songPath=:songPaths")
+    void setPlaylistName(String playlistName,String songPaths);
+
+    @Query("SELECT DISTINCT typeOfPlaylist FROM songsDB ORDER BY typeOfPlaylist ASC")
+    List<String> getAllPlaylists();
+
+    @Query(value = "SELECT * FROM songsDB where typeOfPlaylist LIKE '%+' || :searchPlaylist || '+%'")
+    List<SongDetails> getSongsFromPlaylist(String searchPlaylist);
 
     @Update
-    void setToFavInDB(SongDetails songDetails);
+    void updateDB(SongDetails songDetails);
 
     @Delete
     int deleteSong(SongDetails songDetails);

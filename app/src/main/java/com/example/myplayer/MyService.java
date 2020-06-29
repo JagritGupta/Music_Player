@@ -6,40 +6,32 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.MediaPlayer;
-import android.media.session.MediaSession;
-import android.media.session.PlaybackState;
 import android.net.Uri;
 import android.os.Binder;
 
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.os.SystemClock;
-import android.support.v4.media.MediaBrowserCompat;
 import android.support.v4.media.session.MediaSessionCompat;
-import android.support.v4.media.session.PlaybackStateCompat;
 import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
 import android.util.Log;
-import android.view.KeyEvent;
 
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
 import com.example.myplayer.SearchOption.NotificationActionService;
-import com.example.myplayer.SearchOption.OnClearFromRecentServiceSearch;
 
 import java.util.ArrayList;
 
-public class MyService extends Service {
+public class MyService extends Service implements IdialogListener {
 
     static MediaPlayer mediaPlayer = null;
     static int recyclerViewPosition;
@@ -47,6 +39,7 @@ public class MyService extends Service {
     int currentPosition = 0;
     NotificationManager notificationManager;
     private static MyService instance;
+    RoomService roomService;
     IBinder mBinder;
     static SongDetails songDetails = null;
     ArrayList<SongDetails> songsList;
@@ -57,44 +50,43 @@ public class MyService extends Service {
     public static final String ACTION_PLAY = "actionplay";
     public static final String ACTION_NEXT = "actionnext";
     public static Notification notification;
+
     @Override
     public void onCreate() {
         super.onCreate();
         Log.e("Calling", "MyService Created");
 
         songsList = Utility.getSongsList();
-
+        roomService = new RoomService(getApplication());
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             createChannel();
         }
-
+        CreateNewPlaylistDialog.getCallback(this);
         PhoneStateListener phoneStateListener = new PhoneStateListener() {
             @Override
             public void onCallStateChanged(int state, String incomingNumber) {
                 if (state == TelephonyManager.CALL_STATE_RINGING) {
-                    if(mediaPlayer!=null && mediaPlayer.isPlaying()){
+                    if (mediaPlayer != null && mediaPlayer.isPlaying()) {
                         pausePlaying();
                     }
-                }
-                else if(state == TelephonyManager.CALL_STATE_IDLE) {
+                } else if (state == TelephonyManager.CALL_STATE_IDLE) {
                     pausePlaying();
-                }
-                else if(state == TelephonyManager.CALL_STATE_OFFHOOK) {
+                } else if (state == TelephonyManager.CALL_STATE_OFFHOOK) {
                 }
 
                 super.onCallStateChanged(state, incomingNumber);
             }
         };
         TelephonyManager mgr = (TelephonyManager) getSystemService(TELEPHONY_SERVICE);
-        if(mgr != null) {
+        if (mgr != null) {
             mgr.listen(phoneStateListener, PhoneStateListener.LISTEN_CALL_STATE);
-        }    }
+        }
+    }
 
 
     public MediaPlayer getMediaPlayer() {
         return mediaPlayer;
     }
-
 
     class MyServiceBinder extends Binder {
         public MyService getService() {
@@ -128,7 +120,7 @@ public class MyService extends Service {
         recyclerViewPosition = bundle.getInt("SongPos");
         /*songDetails = songsList.get(recyclerViewPosition);
         playMedia(songDetails);*/
-        registerReceiver(broadcastReceiver,new IntentFilter("SONG_LIST"));
+        registerReceiver(broadcastReceiver, new IntentFilter("SONG_LIST"));
         return START_STICKY;
     }
 
@@ -143,7 +135,7 @@ public class MyService extends Service {
         }
 
 
-        if (songDetails.playlistType.equalsIgnoreCase("Festival"))                  //type FESTIVAL
+        if (songDetails.playerType.equalsIgnoreCase("Festival"))                  //type FESTIVAL
             mediaPlayer = MediaPlayer.create(getApplicationContext(), festivalSongsList[songDetails.getPosition()]);
 
         else {            //type DOWNLOADS
@@ -164,12 +156,12 @@ public class MyService extends Service {
     public void pausePlaying() {
         Log.e("Calling", "I PAUSE PLAY");
 
-        if(mediaPlayer!=null){
+        if (mediaPlayer != null) {
 
-            if(MainActivity.isMainActivityVisible && mediaPlayer.isPlaying())
+            if (MainActivity.isMainActivityVisible && mediaPlayer.isPlaying())
                 MainActivity.miniPlayPauseBtn.setImageResource(R.drawable.play_btn);
 
-            else if(MainActivity.isMainActivityVisible && !mediaPlayer.isPlaying())
+            else if (MainActivity.isMainActivityVisible && !mediaPlayer.isPlaying())
                 MainActivity.miniPlayPauseBtn.setImageResource(R.drawable.pause_btn);
 
 
@@ -190,7 +182,10 @@ public class MyService extends Service {
     public void playNextSong() {
 
         Log.e("Calling", "I NEXT CALLED");
-        recyclerViewPosition = (recyclerViewPosition + 1) % songsList.size();
+        recyclerViewPosition = recyclerViewPosition + 1;
+        if (recyclerViewPosition >= songsList.size())
+            recyclerViewPosition = 0;
+
         Log.d("PLAYINGS", String.valueOf(recyclerViewPosition));
         songDetails = songsList.get(recyclerViewPosition);
         playMedia(recyclerViewPosition);
@@ -201,7 +196,7 @@ public class MyService extends Service {
 
     public void playPreviousSong() {
         Log.e("Calling", "I PREVIOUS CALLED");
-        recyclerViewPosition = (recyclerViewPosition - 1) % songsList.size();
+        recyclerViewPosition = recyclerViewPosition - 1;
         if (recyclerViewPosition < 0)
             recyclerViewPosition = songsList.size() - 1;
         songDetails = songsList.get(recyclerViewPosition);
@@ -249,9 +244,9 @@ public class MyService extends Service {
 
     }
 
-    public  void createNotification(Context context, SongDetails songDetails, boolean isPlaying) {
-        Bitmap bm=null;
-        Log.e("Calling","In CreateNotification");
+    public void createNotification(Context context, SongDetails songDetails, boolean isPlaying) {
+        Bitmap bm = null;
+        Log.e("Calling", "In CreateNotification");
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 
@@ -259,9 +254,9 @@ public class MyService extends Service {
             MediaSessionCompat mediaSessionCompat = new MediaSessionCompat(context, "tag");
 
 
-            if (songDetails.playlistType.equalsIgnoreCase("Festival")) {
+            if (songDetails.playerType.equalsIgnoreCase("Festival")) {
                 bm = BitmapFactory.decodeResource(context.getResources(), R.drawable.music_player);
-            } else if(songDetails.playlistType.equalsIgnoreCase("Downloads")) {
+            } else if (songDetails.playerType.equalsIgnoreCase("Downloads")) {
                 bm = BitmapFactory.decodeByteArray(songDetails.songAlbumArt, 0, songDetails.songAlbumArt.length);
             }
 
@@ -294,12 +289,11 @@ public class MyService extends Service {
                     intentNext, PendingIntent.FLAG_UPDATE_CURRENT);
             drw_next = R.drawable.next_btn;
 
-            Intent intentOpen=new Intent(context, PlayerActivity.class);
-            intentOpen.putExtra("position",-1);
+            Intent intentOpen = new Intent(context, PlayerActivity.class);
+            intentOpen.putExtra("position", -1);
             intentOpen.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
             PendingIntent pendingWholeClick = PendingIntent.getActivity(context, 0,
                     intentOpen, PendingIntent.FLAG_UPDATE_CURRENT);
-
 
 
             //create notifcation
@@ -365,6 +359,7 @@ public class MyService extends Service {
             switch (action) {
 
                 case CreateNotification.ACTION_PLAY:
+                    Log.d("CHECKSSS", String.valueOf(roomService.getAllPlaylists().size()));
                     PlayerActivity.pauseBtn.performClick();
                     break;
 
@@ -388,4 +383,21 @@ public class MyService extends Service {
         }
         unregisterReceiver(broadcastReceiver);
     }
+
+
+    @Override
+    public void addSongToPlaylist(String playlistName) {
+
+    }
+
+    @Override
+    public void createNewPlaylist(String newPlaylistName,SongDetails songDetails) {
+        //songDetails.setPlayerType(newPlaylistName);
+        String playlistName = songDetails.getTypeOfPlaylist() + "+" + newPlaylistName + "+";   //so tht a single can store in multiple playlists
+        songDetails.setTypeOfPlaylist(playlistName);
+        roomService.setPlaylistName(playlistName, songDetails.getSongPath());
+        String s = String.valueOf(roomService.getAllPlaylists().size());
+        Log.d("CHECKSSS", s);
+    }
+
 }

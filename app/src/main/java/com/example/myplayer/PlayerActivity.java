@@ -3,19 +3,14 @@ package com.example.myplayer;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.ServiceConnection;
-import android.content.pm.ActivityInfo;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.PorterDuff;
 import android.os.Bundle;
-import android.os.IBinder;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
@@ -31,7 +26,7 @@ import java.util.concurrent.TimeUnit;
 public class PlayerActivity extends AppCompatActivity {
     public static Button prevBtn, nextBtn;
     Button next10, prev10;
-    ImageView setToUnfavouriteBtn, setToFavouriteBtn, playSongImage;
+    ImageView setTofav_Unfav, playSongImage, createPlaylist;
     static ImageView pauseBtn;
     public static boolean isPlayerActivityActive = false;
     TextView songLabel, startTimer, endTimer;
@@ -68,13 +63,13 @@ public class PlayerActivity extends AppCompatActivity {
         isPlayerActivityActive = true;
         pauseBtn = findViewById(R.id.btn_pause);
         prevBtn = findViewById(R.id.btn_prev);
-        setToUnfavouriteBtn = findViewById(R.id.favFilled);
-        setToFavouriteBtn = findViewById(R.id.favUnfilled);
+        setTofav_Unfav = findViewById(R.id.favFill_unFill);
         playSongImage = findViewById(R.id.playSong_image);
         nextBtn = findViewById(R.id.btn_next);
         startTimer = findViewById(R.id.start_timer);
         endTimer = findViewById(R.id.end_timer);
         songLabel = findViewById(R.id.song_name_label);
+        createPlaylist =findViewById(R.id.playlistBtn);
         seekBar = findViewById(R.id.seek_bar);
         next10 = findViewById(R.id.forward_ten);
         prev10 = findViewById(R.id.prev_ten);
@@ -196,29 +191,31 @@ public class PlayerActivity extends AppCompatActivity {
             }
         });
 
-        setToFavouriteBtn.setOnClickListener(new View.OnClickListener() {
+        setTofav_Unfav.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Toast.makeText(PlayerActivity.this, "Song Added to your favourites", Toast.LENGTH_SHORT).show();
-                setToFavouriteBtn.setVisibility(View.GONE);
-                setToUnfavouriteBtn.setVisibility(View.VISIBLE);
-                songDetails.setIsFavourite(true);
-                Utility.songsList.get(myService.getRecyclerViewPosition()).setIsFavourite(true);
-                //Code to insert
-                roomService.updateDB(songDetails);
+
+                if(songDetails.isFavourite()){  //if song is in Favourite
+                    setTofav_Unfav.setImageResource(R.drawable.fav_unfilled);
+                    songDetails.setIsFavourite(false);
+                    Utility.songsList.get(myService.getRecyclerViewPosition()).setIsFavourite(false);
+                    roomService.updateDB(songDetails);
+                }
+                else{               //Currently song is unfavourite
+                    setTofav_Unfav.setImageResource(R.drawable.favfilled);
+                    songDetails.setIsFavourite(true);
+                    Utility.songsList.get(myService.getRecyclerViewPosition()).setIsFavourite(true);
+                    roomService.updateDB(songDetails);
+                }
 
             }
         });
 
-        setToUnfavouriteBtn.setOnClickListener(new View.OnClickListener() {
+        createPlaylist.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Toast.makeText(PlayerActivity.this, "Song removed from your favourites", Toast.LENGTH_SHORT).show();
-                songDetails.setIsFavourite(false);
-                Utility.songsList.get(myService.getRecyclerViewPosition()).setIsFavourite(false);
-                roomService.deleteSong(songDetails);
-                setToFavouriteBtn.setVisibility(View.VISIBLE);
-                setToUnfavouriteBtn.setVisibility(View.GONE);
+                CreateNewPlaylistDialog createNewPlaylistDialog=new CreateNewPlaylistDialog(getApplication(),songDetails);
+                createNewPlaylistDialog.show(getSupportFragmentManager(),"");
             }
         });
     }
@@ -236,7 +233,6 @@ public class PlayerActivity extends AppCompatActivity {
         songName.replace(".mp3", "").replace(".wav", "");
         songLabel.setText(songName);
         songLabel.setSelected(true);
-        Toast.makeText(PlayerActivity.this, songName, Toast.LENGTH_LONG).show();
 
         seekBar.setMax(myService.getTotalDuration());
         setTimer(myService.getCurrentPlayerPosition());
@@ -254,9 +250,9 @@ public class PlayerActivity extends AppCompatActivity {
         seekBar.getProgressDrawable().setColorFilter(getResources().getColor(R.color.iconColor), PorterDuff.Mode.MULTIPLY);
         seekBar.getThumb().setColorFilter(getResources().getColor(R.color.colorPrimaryDark), PorterDuff.Mode.SRC_IN);
 
-        if (songDetails.playlistType.equalsIgnoreCase("Festival")) {
+        if (songDetails.playerType.equalsIgnoreCase("Festival")) {
             //playSongImage.setImageResource(R.drawable.music_player);
-        } else if (songDetails.playlistType.equalsIgnoreCase("Downloads")) {
+        } else if (songDetails.playerType.equalsIgnoreCase("Downloads")) {
             if(songDetails.songAlbumArt!=null && songDetails.songAlbumArt.length>0) {
                 Bitmap bm = BitmapFactory.decodeByteArray(songDetails.songAlbumArt, 0, songDetails.songAlbumArt.length);
                 playSongImage.setImageBitmap(bm);
@@ -264,11 +260,9 @@ public class PlayerActivity extends AppCompatActivity {
         }
 
         if (songDetails.isFavourite()) {
-            setToFavouriteBtn.setVisibility(View.GONE);
-            setToUnfavouriteBtn.setVisibility(View.VISIBLE);
+            setTofav_Unfav.setImageResource(R.drawable.favfilled);
         } else {
-            setToFavouriteBtn.setVisibility(View.VISIBLE);
-            setToUnfavouriteBtn.setVisibility(View.GONE);
+            setTofav_Unfav.setImageResource(R.drawable.fav_unfilled);
         }
     }
 
@@ -292,9 +286,6 @@ public class PlayerActivity extends AppCompatActivity {
         super.onBackPressed();
         onResume();
         isPlayerActivityActive = false;
-        if (songDetails.isFavourite) {
-
-        }
         if (isFavouriteMenuMode == true && !songDetails.isFavourite()) {
             songsList.remove(songDetails);
             Utility.setSongsList(songsList);
