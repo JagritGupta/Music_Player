@@ -78,7 +78,7 @@
                 android:layout_height="wrap_content"
                 android:layout_alignParentRight="true"
                 android:layout_centerVertical="true"
-                android:text="+"
+                android:text="&#8942;"
                 android:paddingTop="3dp"
                 android:paddingBottom="3dp"
                 android:textColor="#f5f5f5"

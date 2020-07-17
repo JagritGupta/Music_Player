@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    package="com.example.myplayer">
+    package="com.music.myplayer">
 
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
 
@@ -13,16 +13,16 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".RenamePlaylistActivity"></activity>
-        <activity android:name=".PlaylistActivity"
+        <activity android:name="com.music.myplayer.RenamePlaylistActivity"></activity>
+        <activity android:name="com.music.myplayer.PlaylistActivity"
             android:screenOrientation="portrait"/>
-        <activity android:name=".MediaPlayer_mini" />
+        <activity android:name="com.music.myplayer.MediaPlayer_mini" />
         <activity
-            android:name=".MainMenu"
+            android:name="com.music.myplayer.MainMenu"
             android:screenOrientation="portrait"
             tools:ignore="LockedOrientationActivity" />
         <activity
-            android:name=".splashScreenActivity"
+            android:name="com.music.myplayer.splashScreenActivity"
             android:screenOrientation="portrait"
             android:theme="@style/AppThemeWithNoBar"
             tools:ignore="LockedOrientationActivity">
@@ -33,21 +33,21 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".PlayerActivity"
+            android:name="com.music.myplayer.PlayerActivity"
             android:launchMode="singleTask"
             android:screenOrientation="portrait"
             tools:ignore="LockedOrientationActivity" />
         <activity
-            android:name=".MainActivity"
+            android:name="com.music.myplayer.MainActivity"
             android:screenOrientation="portrait"
             tools:ignore="LockedOrientationActivity" />
 
-        <receiver android:name=".SearchOption.NotificationActionService" />
+        <receiver android:name="com.music.myplayer.SearchOption.NotificationActionService" />
 
         <service
-            android:name=".MyService"
+            android:name="com.music.myplayer.MyService"
             android:enabled="true" />
-        <service android:name=".SearchOption.OnClearFromRecentServiceSearch" />
+        <service android:name="com.music.myplayer.SearchOption.OnClearFromRecentServiceSearch" />
 
         <meta-data
             android:name="preloaded_fonts"
