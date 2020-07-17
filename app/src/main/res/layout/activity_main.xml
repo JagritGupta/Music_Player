@@ -47,7 +47,8 @@
                 android:id="@+id/song_imageView"
                 android:layout_width="60dp"
                 android:layout_height="60dp"
-                android:src="@drawable/music_player" />
+                android:background="#CCE1FA"
+                android:src="@drawable/player_logo_icon" />
 
             <TextView
                 android:id="@+id/song_name"

@@ -5,4 +5,13 @@
     <color name="colorAccent">#D81B60</color>
     <color name="iconColor">#F8F4CF</color>
     <color name="playerBackgroud">#077A8A</color>
+
+    <color name="red">#D10707</color>
+    <color name="yellow">#F3BD36</color>
+    <color name="green">#0B9E11</color>
+    <color name="pink">#9E0749</color>
+    <color name="violet">#621391</color>
+    <color name="darkBlue">#06588A</color>
+    <color name="darkGreen">#025324</color>
+
 </resources>

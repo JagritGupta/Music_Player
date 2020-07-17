@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="wrap_content"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
 
@@ -12,24 +12,22 @@
 
         <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:layout_marginRight="5dp">
 
             <RelativeLayout
                 android:id="@+id/item_song_layout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_toLeftOf="@id/favUnfilled"
+                android:layout_toLeftOf="@id/menuOptions"
                 android:paddingLeft="10dp"
-                android:paddingBottom="10dp"
-                android:paddingTop="10dp"
-
-                >
+                android:paddingTop="7dp">
 
                 <ImageView
                     android:id="@+id/songImage"
-                    android:layout_width="52dp"
-                    android:layout_height="56dp"
-                    android:src="@drawable/music_player"
+                    android:layout_width="57dp"
+                    android:layout_height="57dp"
+                    android:src="@drawable/player_logo_icon"
                     />
 
                 <TextView
@@ -37,31 +35,33 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginLeft="6dp"
+                    android:layout_toRightOf="@id/songImage"
                     android:ellipsize="end"
+                    android:fontFamily="sans-serif-medium"
                     android:gravity="center_vertical"
                     android:marqueeRepeatLimit="marquee_forever"
                     android:maxLines="1"
                     android:padding="5dp"
                     android:text="Malang Title Track Single"
                     android:textColor="@color/colorPrimaryDark"
-                    android:layout_toRightOf="@id/songImage"
                     android:textSize="18dp"
-                    android:textStyle="bold"/>
+                    android:textStyle="bold" />
 
                 <TextView
                     android:id="@+id/songDesc"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_below="@id/songTitle"
+                    android:layout_toRightOf="@id/songImage"
                     android:ellipsize="end"
+                    android:fontFamily="sans-serif"
                     android:marqueeRepeatLimit="marquee_forever"
                     android:maxLines="1"
                     android:paddingLeft="15dp"
                     android:text="Sample Display Song name"
                     android:textColor="@color/colorPrimary"
-                    android:layout_toRightOf="@id/songImage"
-                    android:layout_below="@id/songTitle"
                     android:textSize="13dp"
-                    android:textStyle="italic"/>
+                    android:textStyle="italic" />
 
                 <ImageView
                     android:id="@+id/favourites"
@@ -71,28 +71,34 @@
                     />
             </RelativeLayout>
 
-            <ImageView
-                android:id="@+id/favUnfilled"
-                android:layout_width="50dp"
-                android:layout_height="65dp"
-                android:layout_alignParentTop="true"
-                android:paddingRight="16dp"
-                android:paddingTop="16dp"
-                android:paddingBottom="16dp"
-                android:paddingLeft="16dp"
+
+            <TextView
+                android:id="@+id/menuOptions"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:layout_alignParentRight="true"
                 android:layout_centerVertical="true"
-                app:srcCompat="@drawable/fav" />
+                android:text="&#8942;"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
+                android:textColor="#f5f5f5"
+                android:paddingLeft="8dp"
+                android:layout_marginRight="5dp"
+                android:paddingRight="8dp"
+                android:background="@drawable/dark_black_circle"
+                android:textStyle="bold"
+                android:textAppearance="?android:textAppearanceLarge" />
 
-            <ImageView
-                android:id="@+id/favFilled"
-                android:layout_width="25dp"
-                android:layout_height="25dp"
-                android:layout_alignParentTop="true"
-                android:layout_alignParentRight="true"
-                android:visibility="gone"
-                app:srcCompat="@drawable/favfilled" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/item_song_layout"
+                android:maxLines="1"
+                android:textColor="#92A8A5"
+                android:text="________________________________________________________________"/>
         </RelativeLayout>
+
 
 
 
